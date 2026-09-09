@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#201814">
+<title>Entweder Oder</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#201814; --surface:#2B211B; --surface-2:#352A22; --line:#3F332B; --line-soft:#33291F;
+  --ink:#F4EBDD; --ink-soft:#B9AB98; --ink-mute:#7E7266;
+  --accent:#E0A95A; --accent-ink:#201814; --accent-soft:rgba(224,169,90,.14); --accent-line:rgba(224,169,90,.6);
+  --flag:#D98B75;
+  --serif: ui-serif,"New York","Iowan Old Style",Charter,Georgia,"Noto Serif",serif;
+  --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+/* Für die acht Gedankenexperimente wird es dunkler: vom Küchentisch ans Nachtfenster. */
+body.night{--bg:#101319;--surface:#181C25;--surface-2:#20252F;--line:#2B3140;--line-soft:#232837;--accent-ink:#101319}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh;transition:background-color .7s ease}
+::selection{background:var(--accent);color:var(--accent-ink)}
+
+.progress{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:5px;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;opacity:0;transition:opacity .3s}
+.progress.on{opacity:1}
+.seg{flex:1;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.seg i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+
+.wrap{max-width:30rem;margin:0 auto;padding:calc(env(safe-area-inset-top) + 3.5rem) 1.25rem calc(env(safe-area-inset-bottom) + 8rem)}
+.wrap.in{animation:appear .22s ease both}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+
+.meta{display:flex;justify-content:space-between;gap:1rem;font-size:.875rem;color:var(--ink-soft);margin-bottom:1.5rem}
+.meta b{font-weight:500;color:var(--ink)}
+h1{font-family:var(--serif);font-weight:400;font-size:3rem;line-height:.95;letter-spacing:-.015em;margin:0 0 1.5rem}
+h2{font-family:var(--serif);font-weight:400;font-size:1.625rem;line-height:1.15;letter-spacing:-.01em;margin:0 0 1rem}
+p{margin:0 0 1rem;max-width:30rem}
+.lead{color:var(--ink)}
+.dim{color:var(--ink-soft)}
+.hint{color:var(--ink-soft);font-size:.875rem;margin-top:.5rem}
+.warn{color:var(--flag);font-size:.875rem;margin:0}
+.warn:empty{display:none}
+.callout{border-left:2px solid var(--accent);padding:.25rem 0 .25rem 1rem;margin:1.5rem 0;font-family:var(--serif);font-size:1.125rem;line-height:1.5}
+.divider{border:0;border-top:1px solid var(--line-soft);margin:2rem 0}
+
+.question{font-family:var(--serif);font-size:1.75rem;line-height:1.2;letter-spacing:-.01em;margin:0 0 1.75rem;text-wrap:balance}
+
+.opts{display:grid;gap:.5rem;margin-bottom:1rem}
+.oder{display:flex;align-items:center;gap:.75rem;color:var(--ink-mute);font-family:var(--serif);font-style:italic;font-size:.9375rem;padding:.125rem .25rem}
+.oder::before,.oder::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.opt{appearance:none;width:100%;display:flex;align-items:center;gap:1rem;min-height:4.25rem;padding:1rem 1.125rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-family:var(--serif);font-size:1.125rem;line-height:1.3;text-align:left;cursor:pointer;transition:background-color .15s,border-color .15s,opacity .15s}
+.opt::after{content:"";flex:none;width:1.375rem;height:1.375rem;margin-left:auto;border-radius:50%;border:1px solid var(--ink-mute);transition:background-color .15s,border-color .15s}
+@media(hover:hover){.opt:hover{background:var(--surface-2);border-color:var(--ink-mute)}}
+.opt:active{background:var(--surface-2)}
+.opt:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.opts.done .opt{opacity:.45}
+.opts.done .opt.sel{opacity:1;background:var(--accent-soft);border-color:var(--accent-line)}
+.opts.done .opt.sel::after{border-color:var(--accent);background:var(--accent) url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23201814' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center/62% no-repeat}
+.opts.off .opt{opacity:.3}
+
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.25rem}
+.chip{appearance:none;display:inline-flex;align-items:center;gap:.5rem;padding:.5rem .875rem;border:1px solid var(--line);border-radius:999px;background:none;color:var(--ink-soft);font-family:var(--sans);font-size:.875rem;line-height:1.2;cursor:pointer;min-height:2.5rem}
+.chip.on{border-color:var(--accent-line);background:var(--accent-soft);color:var(--ink)}
+.chip.flag.on{border-color:var(--flag);background:rgba(217,139,117,.12)}
+.chip:disabled{opacity:.35;cursor:default}
+.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.skipnote{font-size:.875rem;color:var(--ink-soft);margin-left:auto}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:9;padding:.875rem 1.25rem calc(env(safe-area-inset-bottom) + 1rem);background:var(--bg);transition:background-color .7s ease}
+.dock::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:1.5rem;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
+.dock:empty{display:none}
+.dock>div{max-width:30rem;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.btn{appearance:none;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-family:var(--sans);font-weight:600;font-size:1rem;line-height:1.2;padding:.875rem 1.5rem;min-height:3.25rem;border-radius:999px;cursor:pointer;flex:1}
+.btn:disabled{opacity:.3;cursor:default}
+.btn.ghost{flex:0 0 auto;background:none;border-color:transparent;color:var(--ink-soft);font-weight:500;padding-left:.5rem}
+.btn.line{flex:0 0 auto;background:none;border-color:var(--line);color:var(--ink);font-weight:500}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.actions{display:flex;flex-wrap:wrap;gap:.625rem;margin:1.25rem 0}
+.link{background:none;border:0;padding:0;font:inherit;font-size:.875rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.foot{display:flex;gap:1.5rem;margin-top:2.5rem}
+
+.field{margin-bottom:1.5rem}
+.field label{display:block;font-size:.9375rem;color:var(--ink-soft);margin-bottom:.5rem}
+.slot{display:flex;align-items:center;gap:.75rem;width:100%;min-height:4rem;padding:.875rem 1.125rem;margin-bottom:.625rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left}
+button.slot{cursor:pointer}
+@media(hover:hover){button.slot:hover{background:var(--surface-2)}}
+button.slot:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.slot:focus-within{border-color:var(--accent-line)}
+.slot .who{flex:1;font-weight:500}
+.slot .st{font-size:.875rem;color:var(--ink-soft);white-space:nowrap}
+.slot.fin{background:none}
+.slot.fin .who{color:var(--ink-soft);font-weight:400}
+.slot.fin .st{color:var(--accent)}
+.slot input[type=text]{flex:1;min-width:0;background:none;border:0;border-radius:0;padding:0;font-size:1rem}
+.slot input[type=text]:focus{outline:none}
+.go{appearance:none;flex:none;border:0;background:none;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:.25rem 0}
+.go:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+.ticket{border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:1rem 1.125rem;margin:1.25rem 0 1rem}
+.ticket .for{font-size:.875rem;color:var(--ink-soft);margin-bottom:.625rem}
+.code{font-family:var(--mono);font-size:.8125rem;line-height:1.65;word-break:break-all;color:var(--ink);user-select:all;-webkit-user-select:all}
+.stat{font-family:var(--serif);font-size:4.5rem;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent);margin:0 0 .5rem}
+
+.saved{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 6rem);left:50%;transform:translateX(-50%);z-index:11;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-soft);font-size:.75rem;padding:.375rem .75rem;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .3s}
+.saved.show{opacity:1}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="progress" id="bar"></div>
+<main class="wrap" id="app"></main>
+<div class="dock" id="dock"></div>
+<div class="saved" id="saved">Zwischenstand gesichert</div>
+
+<script>
+"use strict";
+var VERSION="v1.3", STORE_KEY="pt-v13";
+
+var ITEMS=[
+ {b:1,q:"Sprachnachricht, zweieinhalb Minuten.",a:"Sofort anhören",z:"Zwei Tage später"},
+ {b:1,q:"Ein Buch nervt nach 50 Seiten.",a:"Durchziehen",z:"Weglegen"},
+ {b:1,q:"Der Zug fällt aus, alle stehen auf dem Bahnsteig.",a:"Sofort das Handy raus",z:"Erst mal hinsetzen"},
+ {b:1,q:"Eine Serie mit acht Folgen.",a:"An einem Abend",z:"Über Wochen"},
+ {b:1,q:"Ein neues Gerät.",a:"Anleitung lesen",z:"Draufloswerkeln und hinterher googeln"},
+ {b:1,q:"Nachricht gelesen, seit drei Tagen keine Antwort.",a:"Nachfragen",z:"Abwarten"},
+ {b:1,q:"Etwas geht kaputt.",a:"Selbst reparieren",z:"Ersetzen"},
+ {b:1,q:"Eine unbekannte Nummer ruft an.",a:"Rangehen",z:"Klingeln lassen und googeln"},
+ {b:2,q:"Im Streit.",a:"Alles sagen",z:"Etwas zurückhalten"},
+ {b:2,q:"Kritik.",a:"Prallt ab und nagt nachts",z:"Trifft sofort und ist morgen weg"},
+ {b:2,q:"Eine schlechte Nachricht.",a:"Still werden",z:"Aktiv werden"},
+ {b:2,q:"Jemand drängelt sich an der Kasse vor.",a:"Ansprechen",z:"Schlucken und zu Hause davon erzählen"},
+ {b:2,q:"Nach einem Streit.",a:"Als Erster melden",z:"Aussitzen"},
+ {b:2,q:"Dieselbe Geschichte zum vierten Mal.",a:"Durchlassen",z:"Sagen"},
+ {b:2,q:"Jemand weint.",a:"Trösten",z:"Abwarten"},
+ {b:2,q:"Man lag falsch.",a:"Zugeben und Thema beenden",z:"Erklären, wie es dazu kam"},
+ {b:3,q:"Zwei Wochen.",a:"Allein in einer Hütte ohne Empfang",z:"Mit acht Leuten in einem Haus"},
+ {b:3,q:"Freitag, 19 Uhr. Die Verabredung sagt ab.",a:"Erleichterung",z:"Enttäuschung"},
+ {b:3,q:"Abschied auf Feiern.",a:"Mit Ansage",z:"Spurlos"},
+ {b:3,q:"Ein schlechter Tag.",a:"Jemanden anrufen",z:"Allein durch"},
+ {b:3,q:"Um Hilfe bitten.",a:"Fällt leicht",z:"Kostet Überwindung"},
+ {b:3,q:"Lieber …",a:"Gebraucht werden",z:"Gemocht werden"},
+ {b:3,k:true,q:"Nach einer hitzigen Diskussion denkt man eher …",a:"Hätte weniger sagen sollen",z:"Hätte mehr sagen sollen"},
+ {b:3,q:"Auf einer Feier.",a:"Leute zusammenbringen",z:"Ein langes Gespräch in der Küche"},
+ {b:3,q:"Ein Wochenende ohne Pläne.",a:"Glücksfall",z:"Unruhe"},
+ {b:3,q:"Lieber jemand …",a:"auf den Verlass ist",z:"der zum Lachen bringt"},
+ {b:3,q:"Lieber bereuen …",a:"was man getan hat",z:"was man gelassen hat"},
+ {b:4,q:"Wir sind …",a:"ein Körper, der denkt",z:"etwas, das gerade einen Körper bewohnt"},
+ {b:4,q:"Dinge passieren …",a:"einfach so",z:"aus einem Grund"},
+ {b:4,q:"Ein Beweis, dass es nach dem Tod weitergeht.",a:"Erleichterung",z:"Beunruhigung"},
+ {b:4,q:"Unbegrenzt Zeit haben.",a:"Geschenk",z:"Fluch"},
+ {b:4,q:"Der eigene Tod ist …",a:"das Ende von allem",z:"das Ende von etwas"},
+ {b:4,q:"Was wäre die unheimlichere Antwort?",a:"Wir sind allein im Universum",z:"Wir sind es nicht"}
+];
+var GEDANKEN=[
+ {q:"Das Leben stellt sich als Traum heraus.",a:"Aufwachen",z:"Weiterträumen"},
+ {q:"Eine Pille sorgt dafür, dass man mit seinem Leben zufrieden ist. Es ändert sich nichts außer dem Gefühl.",a:"Nehmen",z:"Nicht nehmen"},
+ {q:"Was hättest du lieber?",a:"Denselben guten Tag hundertmal",z:"Hundert verschiedene, von denen die Hälfte mies ist"},
+ {q:"Alles noch mal von vorn, mit dem, was du heute weißt — aber nichts wäre je wieder zum ersten Mal.",a:"Ja",z:"Nein"},
+ {q:"Was hättest du lieber?",a:"Die eigene Zukunft kennen",z:"Eine Sache in der Vergangenheit korrigieren können"},
+ {q:"Man darf ein einziges Mal wählen.",a:"Jemanden ganz verstehen",z:"Von jemandem ganz verstanden werden"},
+ {q:"Ein Fehler, den garantiert nie jemand bemerken wird.",a:"Beichten",z:"Für immer schweigen"},
+ {q:"Was hättest du lieber?",a:"Das Traumhaus, das außer dir nie jemand betritt",z:"Ein ganz normales, in dem ständig Leute sind"}
+];
+var N_ITEMS=ITEMS.length, N_GED=GEDANKEN.length, MAX_SKIP=5;
+var BLOCKS=[];ITEMS.forEach(function(it){BLOCKS[it.b-1]=(BLOCKS[it.b-1]||0)+1;});
+var KNOWN=["fast täglich","regelmäßig","selten"];
+var SELF="__self";
+var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+var S=null;
+function fresh(){return{v:VERSION,group:"",name:"",others:[],known:[],codes:{},selfRaw:null,cur:null,edit:true};}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(S));}catch(e){}}
+function go(){save();flash();render();}
+function load(){try{var r=localStorage.getItem(STORE_KEY);if(!r)return null;var o=JSON.parse(r);if(o&&o.v===VERSION)return o;}catch(e){}return null;}
+var tmr=null;
+function flash(){var el=document.getElementById("saved");el.classList.add("show");clearTimeout(tmr);tmr=setTimeout(function(){el.classList.remove("show");},900);}
+function app(){return document.getElementById("app");}
+function setDock(html){document.getElementById("dock").innerHTML=html;}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+/* Zeit: die Uhr startet nur, wenn ein neuer Bildschirm kommt, nicht bei jedem Neuzeichnen.
+   Beim Verlassen (vor oder zurück) wird die Zeit aufaddiert statt überschrieben. */
+var t0=Date.now(), lastKey=null, moving=false;
+function later(fn){if(moving)return;moving=true;setTimeout(function(){moving=false;fn();},RM?0:220);}
+function mark(){t0=Date.now();}
+function el(){return Date.now()-t0;}
+function tc(ms){return ms<2000?0:ms<5000?1:ms<15000?2:3;}
+function addTime(i){var c=S.cur;c.t[i]=(c.t[i]||0)+el();}
+function flipFor(k){var c=S.cur;if(c.flip[k]===undefined)c.flip[k]=Math.random()<.5?1:0;return c.flip[k];}
+
+function screenKey(){
+  if(S.edit||!S.group||!S.name)return "setup";
+  var c=S.cur;if(!c)return "hub";
+  return c.type+"|"+c.target+"|"+c.i+"|"+(c.intro?1:0);
+}
+function frame(key){
+  if(key!==lastKey){
+    mark();lastKey=key;
+    if(!RM){var a=app();a.classList.remove("in");void a.offsetWidth;a.classList.add("in");}
+  }
+  var night=!!(S.cur&&S.cur.type==="self"&&S.cur.i>=N_ITEMS);
+  document.body.classList.toggle("night",night);
+  var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=night?"#101319":"#201814";
+  bar();
+}
+function bar(){
+  var c=S.cur,p=document.getElementById("bar");
+  if(!c){p.innerHTML="";p.classList.remove("on");return;}
+  var segs=c.type==="self"?BLOCKS.concat([N_GED]):BLOCKS, html="", start=0;
+  segs.forEach(function(len){
+    var f=Math.max(0,Math.min(1,(c.i-start)/len));
+    html+='<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';
+    start+=len;
+  });
+  p.innerHTML=html;p.classList.add("on");
+}
+function render(){
+  frame(screenKey());
+  if(S.edit||!S.group||!S.name)return setup();
+  if(!S.cur)return hub();
+  if(S.cur.intro)return intro();
+  if(S.cur.type==="self")return S.cur.i<N_ITEMS?selfQ():gedQ();
+  return otherQ();
+}
+function dock(back,next,dis){
+  return '<div>'+(back?'<button class="btn ghost" id="back">'+back+'</button>':'<span></span>')+
+    (next?'<button class="btn" id="next"'+(dis?" disabled":"")+'>'+next+'</button>':'')+'</div>';
+}
+function hasAnswers(c){
+  if(c.type==="self")return c.self.some(function(v){return v!==null;})||c.ged.some(function(v){return v!==null;});
+  return c.ans.some(function(a){return a.v!==null||a.s;});
+}
+
+/* ---------- Setup: nur Gruppe und eigener Name ---------- */
+function setup(){
+  app().innerHTML='<h1>Entweder<br>oder</h1>'+
+    '<p class="lead">Erst schätzt du dich selbst ein, dann nach und nach die anderen. Jeder Teil dauert rund fünf Minuten und ergibt am Ende einen Code, den du an die Person zurückschickst, die dir den Test geschickt hat.</p>'+
+    '<p class="dim">Du musst nicht alles an einem Tag machen.</p>'+
+    '<hr class="divider">'+
+    '<div class="field"><label for="g">Wie heißt die Gruppe?</label><input type="text" id="g" value="'+esc(S.group)+'" placeholder="z. B. Familie Müller" autocomplete="off">'+
+    '<p class="hint">Alle tragen hier dasselbe ein, sonst passen die Codes nicht zusammen.</p></div>'+
+    '<div class="field"><label for="n">Dein Name</label><input type="text" id="n" value="'+esc(S.name)+'" placeholder="Vorname" autocomplete="off"></div>'+
+    '<p class="warn" id="warn" role="alert"></p>';
+  setDock(dock(null,"Weiter",false));
+  document.getElementById("next").onclick=function(){
+    S.group=document.getElementById("g").value.trim();S.name=document.getElementById("n").value.trim();
+    var w=document.getElementById("warn");
+    if(!S.group||!S.name){w.textContent="Gruppenname und dein Name fehlen noch.";save();return;}
+    if(S.others.some(function(o){return o.toLowerCase()===S.name.toLowerCase();})){w.textContent="Dein Name steht schon bei den anderen. Bitte dort entfernen oder hier anders schreiben.";return;}
+    S.edit=false;save();render();
+  };
+  ["g","n"].forEach(function(id){document.getElementById(id).onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();document.getElementById("next").click();}};});
+}
+
+/* ---------- Übersicht: zwei gleiche Felder, du selbst und eine andere Person ---------- */
+function hub(){
+  function done(n){return !!S.codes[n];}
+  var selfDone=done(SELF);
+  var fin=S.others.filter(done).map(function(n){
+    return '<button class="slot fin" data-t="'+esc(n)+'"><span class="who">'+esc(n)+'</span><span class="st">Code ansehen</span></button>';}).join("");
+  app().innerHTML='<div class="meta"><b>'+esc(S.group)+'</b><span>'+esc(S.name)+'</span></div>'+
+    '<h2>Wen schätzt du ein?</h2>'+
+    (!selfDone
+      ?'<p class="dim">Fang am besten mit dir selbst an — dann siehst du bei den anderen unterwegs eine kleine Auswertung.</p>'
+      :'<p class="dim">Trag einen Namen ein und leg los. Jeder Teil ergibt am Ende einen eigenen Code.</p>')+
+    '<button class="slot'+(selfDone?" fin":"")+'" data-t="'+SELF+'"><span class="who">'+esc(S.name)+' (du selbst)</span><span class="st">'+(selfDone?"Code ansehen":"5 bis 8 Minuten")+'</span></button>'+
+    '<div class="slot"><input type="text" id="newname" placeholder="Eine andere Person: Vorname" autocomplete="off" aria-label="Vorname der anderen Person"><button class="go" id="start">Start</button></div>'+
+    '<p class="warn" id="warn" role="alert"></p>'+
+    fin+
+    '<p class="hint">Schreibt die Namen genau so, wie ihr sie untereinander abgesprochen habt. „Oma“ und „Großmutter“ sind für die Auswertung zwei verschiedene Menschen.</p>'+
+    '<div class="foot"><button class="link" id="edit">Gruppe oder Namen ändern</button><button class="link" id="reset">Alles löschen</button></div>';
+  setDock("");
+
+  Array.prototype.forEach.call(app().querySelectorAll("[data-t]"),function(b){
+    b.onclick=function(){var t=b.dataset.t;if(S.codes[t])return showCode(t);startBlock(t);};});
+  function startOther(){
+    var f=document.getElementById("newname"),n=f.value.trim(),w=document.getElementById("warn");
+    if(!n){f.focus();return;}
+    if(n.toLowerCase()===S.name.toLowerCase()){w.textContent="Das bist du selbst — dafür ist das Feld darüber.";return;}
+    var ex=S.others.filter(function(o){return o.toLowerCase()===n.toLowerCase();})[0];
+    if(ex&&S.codes[ex])return showCode(ex);
+    if(!ex){S.others.push(n);S.known.push(null);}
+    startBlock(ex||n);
+  }
+  document.getElementById("start").onclick=startOther;
+  document.getElementById("newname").onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();startOther();}};
+  document.getElementById("edit").onclick=function(){
+    if(Object.keys(S.codes).length && !confirm("Namen ändern? Fertige Codes bleiben erhalten, passen aber nur bei gleicher Schreibweise."))return;
+    S.edit=true;save();render();
+  };
+  document.getElementById("reset").onclick=function(){
+    if(confirm("Wirklich alles löschen? Auch fertige Codes, die du noch nicht abgeschickt hast."))
+      {localStorage.removeItem(STORE_KEY);S=fresh();render();}
+  };
+}
+
+/* Abbruch: eine Person ohne fertigen Code verschwindet wieder aus der Liste */
+function abortBlock(){
+  var t=S.cur.target;S.cur=null;
+  if(t!==SELF&&!S.codes[t]){var i=S.others.indexOf(t);if(i>=0){S.others.splice(i,1);S.known.splice(i,1);}}
+  save();render();
+}
+
+function startBlock(target){
+  var isSelf=target===SELF;
+  S.cur={type:isSelf?"self":"other",target:target,i:0,intro:true,flip:{},
+    self:isSelf?new Array(N_ITEMS).fill(null):null,
+    ged:isSelf?new Array(N_GED).fill(null):null,
+    ans:isSelf?null:Array.from({length:N_ITEMS},function(){return {v:null,u:false,s:false};}),
+    t:new Array(N_ITEMS+N_GED).fill(0)};
+  save();render();
+}
+
+/* ---------- Einstiege (eigener Bildschirm, damit die Lesezeit nicht in Frage 1 landet) ---------- */
+function intro(){
+  var c=S.cur,html,back="Abbrechen",next="Los geht’s",dis=false,ki=-1;
+  if(c.type==="self"&&c.i===0){
+    html='<div class="meta"><b>Über dich</b></div><h2>Zwei Regeln</h2>'+
+      '<div class="callout">Beantworte alles so, wie du dich im Kreis von Familie und Freunden verhältst — nicht im Beruf.</div>'+
+      '<p>Es gibt keine richtigen Antworten und keine besseren Seiten. Wenn beides zutrifft, nimm das, was häufiger stimmt. Der erste Impuls ist meistens der ehrlichere.</p>';
+  }else if(c.type==="self"){
+    html='<div class="meta"><b>Nur für dich</b></div><h2>Acht Fragen ohne Publikum</h2>'+
+      '<p>Diese schätzt niemand für dich ein, und du tippst nicht, was andere sagen würden. Sie sind nur für dich — und für das Gespräch danach.</p>';
+    back="Zurück";next="Weiter";
+  }else{
+    var name=c.target;ki=S.others.indexOf(name);
+    var kv=(ki>=0&&S.known[ki]!=null)?S.known[ki]:null;
+    html='<div class="meta"><b>Über '+esc(name)+'</b></div><h2>Wie würde '+esc(name)+' antworten?</h2>'+
+      '<p>Dieselben Fragen wie über dich, nur aus der anderen Richtung. Wenn du unsicher bist, tipp erst auf „Bin unsicher“ und dann trotzdem auf eine Antwort — das hilft mehr als gar keine.</p>'+
+      '<div class="callout">Denk an '+esc(name)+' im Kreis von Familie und Freunden, nicht im Beruf.</div>'+
+      '<p class="sublabel">Wie oft seht ihr euch?</p><div class="seen" role="group" aria-label="Wie oft seht ihr euch?">'+
+      KNOWN.map(function(k,j){return '<button class="chip'+(kv===j?" on":"")+'" data-kv="'+j+'" aria-pressed="'+(kv===j)+'">'+k+'</button>';}).join("")+'</div>';
+    dis=(kv===null);
+  }
+  app().innerHTML=html;
+  setDock(dock(back,next,dis));
+  Array.prototype.forEach.call(app().querySelectorAll("[data-kv]"),function(b){
+    b.onclick=function(){
+      var j=+b.dataset.kv;if(ki>=0){S.known[ki]=j;save();}
+      Array.prototype.forEach.call(app().querySelectorAll("[data-kv]"),function(x){var on=+x.dataset.kv===j;x.classList.toggle("on",on);x.setAttribute("aria-pressed",on);});
+      document.getElementById("next").disabled=false;
+    };});
+  document.getElementById("back").onclick=function(){
+    if(back==="Zurück"){c.intro=false;c.i--;save();render();return;}
+    if(!hasAnswers(c)||confirm("Diesen Teil abbrechen? Die bisherigen Antworten gehen verloren.")){abortBlock();}
+  };
+  document.getElementById("next").onclick=function(){c.intro=false;go();};
+}
+
+/* ---------- Fragen ---------- */
+function opts(item,key,chosen,fk){
+  var f=flipFor(fk||key);
+  var A=f?{t:item.z,v:1}:{t:item.a,v:0}, B=f?{t:item.a,v:0}:{t:item.z,v:1};
+  var d=(chosen!==null&&chosen!==undefined)?" done":"";
+  return '<div class="opts'+d+'" data-key="'+key+'">'+
+    '<button class="opt'+(chosen===A.v?" sel":"")+'" data-v="'+A.v+'">'+esc(A.t)+'</button>'+
+    '<div class="oder" aria-hidden="true">oder</div>'+
+    '<button class="opt'+(chosen===B.v?" sel":"")+'" data-v="'+B.v+'">'+esc(B.t)+'</button></div>';
+}
+function wire(key,cb){
+  var g=app().querySelector('.opts[data-key="'+key+'"]');
+  if(g)Array.prototype.forEach.call(g.querySelectorAll(".opt"),function(b){b.onclick=function(){cb(+b.dataset.v);};});
+}
+function paint(key,val){
+  var g=app().querySelector('.opts[data-key="'+key+'"]');
+  if(!g)return;
+  g.classList.add("done");g.classList.remove("off");
+  Array.prototype.forEach.call(g.querySelectorAll(".opt"),function(b){b.classList.toggle("sel",+b.dataset.v===val);});
+}
+
+function selfQ(){
+  var c=S.cur,i=c.i,it=ITEMS[i];
+  app().innerHTML='<div class="meta"><b>Über dich</b><span>Frage '+(i+1)+' von '+(N_ITEMS+N_GED)+'</span></div>'+
+    '<p class="question">'+esc(it.q)+'</p>'+opts(it,"s"+i,c.self[i]);
+  setDock(dock("Zurück",c.self[i]!==null?"Weiter":null,false));
+  function advance(){addTime(i);c.i++;if(c.i===N_ITEMS)c.intro=true;save();later(go);}
+  wire("s"+i,function(v){if(moving)return;c.self[i]=v;save();paint("s"+i,v);advance();});
+  document.getElementById("back").onclick=function(){addTime(i);if(i===0)c.intro=true;else c.i--;go();};
+  var n=document.getElementById("next");if(n)n.onclick=function(){if(!moving)advance();};
+}
+
+function gedQ(){
+  var c=S.cur,j=c.i-N_ITEMS,g=GEDANKEN[j];
+  app().innerHTML='<div class="meta"><b>Nur für dich</b><span>Frage '+(c.i+1)+' von '+(N_ITEMS+N_GED)+'</span></div>'+
+    '<p class="question">'+esc(g.q)+'</p>'+opts(g,"g"+j,c.ged[j]);
+  setDock(dock("Zurück",c.ged[j]!==null?"Weiter":null,false));
+  function advance(){addTime(c.i);c.i++;save();later(function(){if(c.i>=N_ITEMS+N_GED)finish();else go();});}
+  wire("g"+j,function(v){if(moving)return;c.ged[j]=v;save();paint("g"+j,v);advance();});
+  document.getElementById("back").onclick=function(){addTime(c.i);if(j===0)c.intro=true;else c.i--;go();};
+  var n=document.getElementById("next");if(n)n.onclick=function(){if(!moving)advance();};
+}
+
+function otherQ(){
+  var c=S.cur,i=c.i,it=ITEMS[i],a=c.ans[i],name=c.target;
+  var used=c.ans.filter(function(x){return x.s;}).length, canSkip=a.s||used<MAX_SKIP;
+  app().innerHTML='<div class="meta"><b>Über '+esc(name)+'</b><span>Frage '+(i+1)+' von '+N_ITEMS+'</span></div>'+
+    '<p class="question">'+esc(it.q)+'</p>'+opts(it,"f"+i,a.v)+
+    '<div class="tools">'+
+    '<button class="chip'+(a.u?" on":"")+'" id="uns" aria-pressed="'+(a.u?"true":"false")+'"'+(a.s?" disabled":"")+'>Bin unsicher</button>'+
+    '<button class="chip flag'+(a.s?" on":"")+'" id="skip" aria-pressed="'+(a.s?"true":"false")+'"'+(canSkip?"":" disabled")+'>'+(a.s?"Doch beantworten":"Kann ich nicht beurteilen")+'</button>'+
+    (used>0?'<span class="skipnote">'+used+' von '+MAX_SKIP+' übersprungen</span>':"")+'</div>';
+  if(a.s)app().querySelector(".opts").classList.add("off");
+  setDock(dock("Zurück",(a.v!==null||a.s)?"Weiter":null,false));
+  function advance(){addTime(i);c.i++;save();later(function(){if(c.i>=N_ITEMS)finish();else go();});}
+  wire("f"+i,function(v){if(moving)return;a.v=v;a.s=false;save();paint("f"+i,v);advance();});
+  document.getElementById("uns").onclick=function(){
+    a.u=!a.u;save();var b=document.getElementById("uns");b.classList.toggle("on",a.u);b.setAttribute("aria-pressed",a.u);
+  };
+  document.getElementById("skip").onclick=function(){
+    if(moving)return;
+    if(a.s){a.s=false;save();render();return;}
+    a.s=true;a.v=null;a.u=false;save();
+    app().querySelector(".opts").classList.add("off");document.getElementById("skip").classList.add("on");
+    advance();
+  };
+  document.getElementById("back").onclick=function(){addTime(i);if(i===0)c.intro=true;else c.i--;go();};
+  var n=document.getElementById("next");if(n)n.onclick=function(){if(!moving)advance();};
+}
+
+/* Tastatur am Laptop: 1/2 oder Pfeile für die Optionen, Enter für Weiter */
+document.addEventListener("keydown",function(e){
+  var t=e.target&&e.target.tagName;
+  if(t==="INPUT"||t==="SELECT"||t==="TEXTAREA"||e.metaKey||e.ctrlKey||e.altKey)return;
+  var k=e.key;
+  if(k==="Enter"){
+    if(t==="BUTTON")return;
+    var n=document.getElementById("next");if(n&&!n.disabled){e.preventDefault();n.click();}return;
+  }
+  var idx=(k==="1"||k==="ArrowLeft"||k==="ArrowUp")?0:(k==="2"||k==="ArrowRight"||k==="ArrowDown")?1:-1;
+  if(idx<0)return;
+  var groups=app().querySelectorAll(".opts"),g=null;
+  for(var i=0;i<groups.length;i++){if(!groups[i].classList.contains("done")&&groups[i].offsetParent!==null){g=groups[i];break;}}
+  if(!g&&groups.length)g=groups[groups.length-1];
+  if(!g)return;
+  var b=g.querySelectorAll(".opt")[idx];if(b){e.preventDefault();b.click();}
+});
+
+/* ---------- Code ---------- */
+function BitW(){this.b=[];}
+BitW.prototype.p=function(v,n){for(var k=n-1;k>=0;k--)this.b.push((v>>k)&1);};
+BitW.prototype.out=function(){var o=[];for(var i=0;i<this.b.length;i+=8){var x=0;for(var k=0;k<8;k++)x=(x<<1)|(this.b[i+k]||0);o.push(x);}return o;};
+function b64(s){return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function b64b(a){var s="";a.forEach(function(x){s+=String.fromCharCode(x);});return b64(s);}
+function b64t(s){
+  var bytes=new TextEncoder().encode(s), out="";
+  for(var i=0;i<bytes.length;i++)out+=String.fromCharCode(bytes[i]);
+  return b64(out);
+}
+
+function buildCode(){
+  var c=S.cur,w=new BitW(),i;
+  if(c.type==="self"){
+    for(i=0;i<N_ITEMS;i++)w.p(c.self[i]||0,1);
+    for(i=0;i<N_GED;i++)w.p(c.ged[i]||0,1);
+    for(i=0;i<N_ITEMS+N_GED;i++)w.p(tc(c.t[i]||0),2);
+  }else{
+    for(i=0;i<N_ITEMS;i++){
+      var a=c.ans[i];
+      w.p((a.s||a.v===null)?4:(a.v+(a.u?2:0)),3);
+      w.p(tc(c.t[i]||0),2);
+    }
+  }
+  var ki=S.others.indexOf(c.target);
+  var head={g:S.group,n:S.name,t:(c.type==="self"?"":c.target),k:(ki>=0?(S.known[ki]==null?1:S.known[ki]):null)};
+  return "PT13."+(c.type==="self"?"S":"F")+"."+b64t(JSON.stringify(head))+"."+b64b(w.out());
+}
+
+function projectionRate(){
+  var c=S.cur;
+  if(c.type!=="other"||!S.selfRaw)return null;
+  var same=0,tot=0;
+  for(var i=0;i<N_ITEMS;i++){
+    if(ITEMS[i].k)continue;
+    var a=c.ans[i];
+    if(a.s||a.v===null)continue;
+    tot++;if(a.v===S.selfRaw[i])same++;
+  }
+  return tot?Math.round(same/tot*100):null;
+}
+
+function finish(){
+  var c=S.cur,code=buildCode(),extra=null;
+  if(c.type==="self"){S.selfRaw=c.self.slice();}
+  else{var p=projectionRate();if(p!==null)extra={kind:"proj",n:p};}
+  S.codes[c.target]=code;
+  var target=c.target;
+  S.cur=null;save();
+  showCode(target,extra,true);
+}
+
+function showCode(target,extra,isNew){
+  frame("code|"+target);
+  var code=S.codes[target], isSelf=target===SELF;
+  var who=isSelf?"Du selbst":target, about=isSelf?"sich selbst":target, label=isSelf?"dich selbst":target;
+  var head="";
+  if(extra&&extra.kind==="proj"){
+    head='<p class="stat">'+extra.n+'%</p>'+
+      '<p>So oft hast du bei '+esc(label)+' genau das angekreuzt, was du bei dir selbst angekreuzt hast.</p>'+
+      '<p class="dim">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen anderer ein Stück weit sich selbst. Das passiert jedem, nur unterschiedlich stark.</p><hr class="divider">';
+  }
+  app().innerHTML='<div class="meta"><b>'+(isNew?"Fertig":"Schon erledigt")+'</b><span>'+esc(who)+'</span></div>'+
+    '<h2>'+(isNew?"Das war’s für diesen Teil":"Dein Code")+'</h2>'+head+
+    '<p>Schick diesen Code an die Person, die dir den Test geschickt hat. Er enthält nur deine Antworten zu diesem Teil.</p>'+
+    '<div class="ticket"><div class="for">Von '+esc(S.name)+' über '+esc(about)+'</div><div class="code" id="code">'+esc(code)+'</div></div>'+
+    '<div class="actions"><button class="btn line" id="wa">Per WhatsApp</button><button class="btn line" id="dl">Als Datei sichern</button></div>';
+  setDock('<div><button class="btn ghost" id="tohub">Zur Übersicht</button><button class="btn" id="copy">Code kopieren</button></div>');
+
+  document.getElementById("copy").onclick=function(){
+    var b=document.getElementById("copy");
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(function(){b.textContent="Kopiert";},selectFallback);
+    }else selectFallback();
+    function selectFallback(){
+      var r=document.createRange();r.selectNodeContents(document.getElementById("code"));
+      var s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Markiert, jetzt kopieren";
+    }
+    setTimeout(function(){b.textContent="Code kopieren";},2500);
+  };
+  document.getElementById("wa").onclick=function(){
+    var txt="Entweder Oder — "+S.group+"\n"+S.name+" über "+about+"\n\n"+code;
+    window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank");
+  };
+  document.getElementById("dl").onclick=function(){
+    var safe=(S.name+"-"+label).replace(/[^a-zA-Z0-9äöüÄÖÜß-]+/g,"_");
+    var a=document.createElement("a");
+    a.href="data:text/plain;charset=utf-8,"+encodeURIComponent(code);
+    a.download="entweder-oder_"+safe+".txt";a.click();
+  };
+  document.getElementById("tohub").onclick=function(){S.cur=null;save();render();};
+}
+
+S=load()||fresh();
+render();
+</script>
+</body>
+</html>
