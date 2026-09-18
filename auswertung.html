@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#201814">
+<title>Entweder Oder: Auswertung zu zweit</title>
+<style>
+/* Optik: übernimmt die Tokens der Teilnehmerseite (Bereich 4). Keine eigene Gestaltungslinie. */
+:root{
+  color-scheme:dark;
+  --bg:#201814; --surface:#2B211B; --surface-2:#352A22; --line:#3F332B; --line-soft:#33291F;
+  --ink:#F4EBDD; --ink-soft:#B9AB98; --ink-mute:#7E7266;
+  --accent:#E0A95A; --accent-ink:#201814; --accent-soft:rgba(224,169,90,.14); --accent-line:rgba(224,169,90,.6);
+  --flag:#D98B75; --flag-soft:rgba(217,139,117,.12);
+  --serif: ui-serif,"New York","Iowan Old Style",Charter,Georgia,"Noto Serif",serif;
+  --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+body.night{--bg:#101319;--surface:#181C25;--surface-2:#20252F;--line:#2B3140;--line-soft:#232837;--accent-ink:#101319}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh;transition:background-color .7s ease}
+::selection{background:var(--accent);color:var(--accent-ink)}
+
+.progress{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:5px;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;opacity:0;transition:opacity .3s}
+.progress.on{opacity:1}
+.seg{flex:1;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.seg i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+
+.wrap{max-width:30rem;margin:0 auto;padding:calc(env(safe-area-inset-top) + 3.5rem) 1.25rem calc(env(safe-area-inset-bottom) + 8rem)}
+.wrap.in{animation:appear .22s ease both}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+
+.meta{display:flex;justify-content:space-between;gap:1rem;font-size:.875rem;color:var(--ink-soft);margin-bottom:1.5rem}
+.meta b{font-weight:500;color:var(--ink)}
+h1{font-family:var(--serif);font-weight:400;font-size:3rem;line-height:.95;letter-spacing:-.015em;margin:0 0 1.5rem}
+h2{font-family:var(--serif);font-weight:400;font-size:1.625rem;line-height:1.15;letter-spacing:-.01em;margin:0 0 1rem}
+h3{font-family:var(--serif);font-weight:400;font-size:1.25rem;line-height:1.2;margin:2.25rem 0 .5rem}
+p{margin:0 0 1rem}
+.dim{color:var(--ink-soft)}
+.hint{color:var(--ink-soft);font-size:.875rem;margin-top:.5rem}
+.warn{color:var(--flag);font-size:.875rem;margin:.75rem 0 0}
+.warn:empty{display:none}
+.callout{border-left:2px solid var(--accent);padding:.25rem 0 .25rem 1rem;margin:1.5rem 0;font-family:var(--serif);font-size:1.125rem;line-height:1.5}
+.divider{border:0;border-top:1px solid var(--line-soft);margin:2rem 0}
+
+/* Start: vier Codes */
+.slot{display:flex;align-items:center;gap:.75rem;width:100%;min-height:3.25rem;padding:.625rem 1.125rem;margin-bottom:.5rem;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.slot .who{flex:1}
+.slot .st{font-size:.875rem;color:var(--ink-soft);white-space:nowrap}
+.slot.ok{background:none}
+.slot.ok .who{color:var(--ink-soft)}
+.slot.ok .st{color:var(--accent)}
+label{display:block;font-size:.9375rem;color:var(--ink-soft);margin:1.5rem 0 .5rem}
+textarea{display:block;width:100%;min-height:7rem;padding:.875rem 1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-family:var(--mono);font-size:.8125rem;line-height:1.5;resize:vertical}
+textarea:focus{outline:none;border-color:var(--accent-line)}
+
+/* Fragekarten */
+.card{appearance:none;display:block;width:100%;margin:0 0 .625rem;padding:1rem 1.125rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left}
+button.card{cursor:pointer}
+@media(hover:hover){button.card:hover{background:var(--surface-2);border-color:var(--ink-mute)}}
+button.card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.card.open{background:none}
+.card .q{display:block;font-family:var(--serif);font-size:1.25rem;line-height:1.25;margin:0 0 .375rem;text-wrap:balance}
+.card .ab{display:block;color:var(--ink-soft);font-size:.9375rem}
+.card .ab em{font-family:var(--serif);color:var(--ink-mute)}
+.card .tap{display:block;margin-top:.75rem;font-size:.875rem;font-weight:600;color:var(--accent)}
+.dir{margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--line-soft);animation:appear .3s ease both}
+.dir .says{display:block}
+.dir .says b{font-family:var(--serif);font-weight:400;font-size:1.1875rem}
+.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem .5rem;margin-top:.375rem;font-size:.9375rem;color:var(--ink-soft)}
+.tag{display:inline-block;padding:.125rem .625rem;border-radius:999px;font-size:.8125rem;line-height:1.5;border:1px solid var(--line);color:var(--ink-soft)}
+.tag.hit{border-color:var(--accent-line);background:var(--accent-soft);color:var(--ink)}
+.tag.miss{border-color:var(--flag);background:var(--flag-soft);color:var(--ink)}
+
+.tally{margin:1.5rem 0 0;padding:1rem 1.125rem;border:1px solid var(--line);border-radius:10px}
+.tally p{margin:0}
+.tally p+p{margin-top:.375rem}
+.tally .n{font-family:var(--serif);font-size:1.375rem;color:var(--accent);font-variant-numeric:tabular-nums}
+
+.list{list-style:none;margin:.75rem 0 0;padding:0}
+.list li{padding:.75rem 0;border-top:1px solid var(--line-soft)}
+.list li .q{display:block;font-family:var(--serif);font-size:1.0625rem;line-height:1.3}
+.list li .d{display:block;color:var(--ink-soft);font-size:.9375rem;margin-top:.125rem}
+details{margin:.375rem 0 0}
+summary{cursor:pointer;color:var(--ink-soft);font-size:.875rem;text-decoration:underline;text-underline-offset:3px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+
+.stats{display:flex;gap:1.5rem;margin:.75rem 0}
+.stats div{flex:1}
+.stat{font-family:var(--serif);font-size:3rem;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent);margin:0 0 .25rem}
+
+table{width:100%;border-collapse:collapse;margin:1rem 0;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.625rem .5rem .625rem 0;border-top:1px solid var(--line-soft);font-weight:400;vertical-align:top}
+thead th{border-top:0;color:var(--ink-soft);font-size:.875rem}
+td.n{font-family:var(--serif);font-size:1.125rem;color:var(--accent);white-space:nowrap}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:9;padding:.875rem 1.25rem calc(env(safe-area-inset-bottom) + 1rem);background:var(--bg);transition:background-color .7s ease}
+.dock::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:1.5rem;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
+.dock:empty{display:none}
+.dock>div{max-width:30rem;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.btn{appearance:none;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-family:var(--sans);font-weight:600;font-size:1rem;line-height:1.2;padding:.875rem 1.5rem;min-height:3.25rem;border-radius:999px;cursor:pointer;flex:1}
+.btn:disabled{opacity:.3;cursor:default}
+.btn.ghost{flex:0 0 auto;background:none;border-color:transparent;color:var(--ink-soft);font-weight:500;padding-left:.5rem}
+.btn.line{flex:0 0 auto;background:none;border-color:var(--line);color:var(--ink);font-weight:500}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.link{background:none;border:0;padding:0;font:inherit;font-size:.875rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.link:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.foot{display:flex;gap:1.5rem;margin-top:2rem}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="progress" id="bar"></div>
+<main class="wrap" id="app"></main>
+<div class="dock" id="dock"></div>
+
+<!-- Bereich 2: der Decoder bleibt eine eigene Datei und liegt im selben Ordner. -->
+<script src="decoder.js"></script>
+
+<script id="kern">
+/* ===== Kern der Auswertung (Bereich 3). Kein DOM, damit roundtrip-auswertung.js ihn unter Node prüfen kann.
+   Der Gruppenbericht ruft später dieselben Funktionen für fünf Einschätzer auf. ===== */
+(function(root){
+"use strict";
+var VERSION="v1.3", K_INDEX=22;
+var BLOCKNAMEN=["Alltag","Verhalten unter Druck","Nähe und Rückzug","Metaphysik"];
+
+/* Kopie der Texte aus index.html v1.3. Quelle bleibt Bereich 1; roundtrip-auswertung.js prüft die Gleichheit. */
+var ITEMS=[
+ {b:1,q:"Sprachnachricht, zweieinhalb Minuten.",a:"Sofort anhören",z:"Zwei Tage später"},
+ {b:1,q:"Ein Buch nervt nach 50 Seiten.",a:"Durchziehen",z:"Weglegen"},
+ {b:1,q:"Der Zug fällt aus, alle stehen auf dem Bahnsteig.",a:"Sofort das Handy raus",z:"Erst mal hinsetzen"},
+ {b:1,q:"Eine Serie mit acht Folgen.",a:"An einem Abend",z:"Über Wochen"},
+ {b:1,q:"Ein neues Gerät.",a:"Anleitung lesen",z:"Draufloswerkeln und hinterher googeln"},
+ {b:1,q:"Nachricht gelesen, seit drei Tagen keine Antwort.",a:"Nachfragen",z:"Abwarten"},
+ {b:1,q:"Etwas geht kaputt.",a:"Selbst reparieren",z:"Ersetzen"},
+ {b:1,q:"Eine unbekannte Nummer ruft an.",a:"Rangehen",z:"Klingeln lassen und googeln"},
+ {b:2,q:"Im Streit.",a:"Alles sagen",z:"Etwas zurückhalten"},
+ {b:2,q:"Kritik.",a:"Prallt ab und nagt nachts",z:"Trifft sofort und ist morgen weg"},
+ {b:2,q:"Eine schlechte Nachricht.",a:"Still werden",z:"Aktiv werden"},
+ {b:2,q:"Jemand drängelt sich an der Kasse vor.",a:"Ansprechen",z:"Schlucken und zu Hause davon erzählen"},
+ {b:2,q:"Nach einem Streit.",a:"Als Erster melden",z:"Aussitzen"},
+ {b:2,q:"Dieselbe Geschichte zum vierten Mal.",a:"Durchlassen",z:"Sagen"},
+ {b:2,q:"Jemand weint.",a:"Trösten",z:"Abwarten"},
+ {b:2,q:"Man lag falsch.",a:"Zugeben und Thema beenden",z:"Erklären, wie es dazu kam"},
+ {b:3,q:"Zwei Wochen.",a:"Allein in einer Hütte ohne Empfang",z:"Mit acht Leuten in einem Haus"},
+ {b:3,q:"Freitag, 19 Uhr. Die Verabredung sagt ab.",a:"Erleichterung",z:"Enttäuschung"},
+ {b:3,q:"Abschied auf Feiern.",a:"Mit Ansage",z:"Spurlos"},
+ {b:3,q:"Ein schlechter Tag.",a:"Jemanden anrufen",z:"Allein durch"},
+ {b:3,q:"Um Hilfe bitten.",a:"Fällt leicht",z:"Kostet Überwindung"},
+ {b:3,q:"Lieber …",a:"Gebraucht werden",z:"Gemocht werden"},
+ {b:3,k:true,q:"Nach einer hitzigen Diskussion denkt man eher …",a:"Hätte weniger sagen sollen",z:"Hätte mehr sagen sollen"},
+ {b:3,q:"Auf einer Feier.",a:"Leute zusammenbringen",z:"Ein langes Gespräch in der Küche"},
+ {b:3,q:"Ein Wochenende ohne Pläne.",a:"Glücksfall",z:"Unruhe"},
+ {b:3,q:"Lieber jemand …",a:"auf den Verlass ist",z:"der zum Lachen bringt"},
+ {b:3,q:"Lieber bereuen …",a:"was man getan hat",z:"was man gelassen hat"},
+ {b:4,q:"Wir sind …",a:"ein Körper, der denkt",z:"etwas, das gerade einen Körper bewohnt"},
+ {b:4,q:"Dinge passieren …",a:"einfach so",z:"aus einem Grund"},
+ {b:4,q:"Ein Beweis, dass es nach dem Tod weitergeht.",a:"Erleichterung",z:"Beunruhigung"},
+ {b:4,q:"Unbegrenzt Zeit haben.",a:"Geschenk",z:"Fluch"},
+ {b:4,q:"Der eigene Tod ist …",a:"das Ende von allem",z:"das Ende von etwas"},
+ {b:4,q:"Was wäre die unheimlichere Antwort?",a:"Wir sind allein im Universum",z:"Wir sind es nicht"}
+];
+var GEDANKEN=[
+ {q:"Das Leben stellt sich als Traum heraus.",a:"Aufwachen",z:"Weiterträumen"},
+ {q:"Eine Pille sorgt dafür, dass man mit seinem Leben zufrieden ist. Es ändert sich nichts außer dem Gefühl.",a:"Nehmen",z:"Nicht nehmen"},
+ {q:"Was hättest du lieber?",a:"Denselben guten Tag hundertmal",z:"Hundert verschiedene, von denen die Hälfte mies ist"},
+ {q:"Alles noch mal von vorn, mit dem, was du heute weißt — aber nichts wäre je wieder zum ersten Mal.",a:"Ja",z:"Nein"},
+ {q:"Was hättest du lieber?",a:"Die eigene Zukunft kennen",z:"Eine Sache in der Vergangenheit korrigieren können"},
+ {q:"Man darf ein einziges Mal wählen.",a:"Jemanden ganz verstehen",z:"Von jemandem ganz verstanden werden"},
+ {q:"Ein Fehler, den garantiert nie jemand bemerken wird.",a:"Beichten",z:"Für immer schweigen"},
+ {q:"Was hättest du lieber?",a:"Das Traumhaus, das außer dir nie jemand betritt",z:"Ein ganz normales, in dem ständig Leute sind"}
+];
+
+/* Namen tolerant vergleichen: „Anna “, „anna“ und „Anna“ sind dieselbe Person. */
+function norm(s){return String(s==null?"":s).trim().replace(/\s+/g," ").toLocaleLowerCase("de");}
+
+/* Codes aus beliebigem Text fischen, z. B. aus mehreren kopierten WhatsApp-Nachrichten. */
+function extrahiere(text){return String(text).match(/PT13\.[SF]\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
+
+/* Liest Codes ein. Gleiche Rolle (Gruppe, Typ, von, über) doppelt: der letzte gewinnt. */
+function lies(codes,decode){
+  var gut=[],fehler=[],pos={};
+  codes.forEach(function(code){
+    try{
+      var d=decode(code),key=norm(d.group)+"|"+d.type+"|"+norm(d.name)+"|"+norm(d.target);
+      var e={code:code,data:d,key:key};
+      if(key in pos)gut[pos[key]]=e;else{pos[key]=gut.length;gut.push(e);}
+    }catch(err){fehler.push({code:code,error:err.message});}
+  });
+  return {gut:gut,fehler:fehler};
+}
+
+/* Sucht das Paar mit den meisten passenden Codes (höchstens vier). Bei Gleichstand gewinnt das Paar mit dem eigenen Namen. */
+function findePaar(gut,eigenerName){
+  var gruppen={};
+  gut.forEach(function(e){
+    var d=e.data,g=norm(d.group);
+    var G=gruppen[g]||(gruppen[g]={name:d.group,personen:{},S:{},F:{}});
+    function person(n){var k=norm(n);if(k&&!G.personen[k])G.personen[k]=n;return k;}
+    var n=person(d.name);
+    if(d.type==="self")G.S[n]=e;else G.F[n+">"+person(d.target)]=e;
+  });
+  var best=null,ich=norm(eigenerName);
+  Object.keys(gruppen).forEach(function(g){
+    var G=gruppen[g],ks=Object.keys(G.personen);
+    if(ks.length===1)ks.push(null);
+    for(var i=0;i<ks.length;i++)for(var j=i+1;j<ks.length;j++){
+      var a=ks[i],b=ks[j];
+      var p={gruppe:G.name,
+        a:{name:G.personen[a],selbst:G.S[a]||null,tipp:(b&&G.F[a+">"+b])||null},
+        b:{name:b?G.personen[b]:null,selbst:(b&&G.S[b])||null,tipp:(b&&G.F[b+">"+a])||null}};
+      p.teile=[p.a.selbst,p.a.tipp,p.b.selbst,p.b.tipp].filter(Boolean);
+      p.punkte=p.teile.length*2+((ich&&(a===ich||b===ich))?1:0);
+      if(!best||p.punkte>best.punkte)best=p;
+    }
+  });
+  if(best)best.unbenutzt=gut.filter(function(e){return best.teile.indexOf(e)<0;});
+  return best;
+}
+
+/* Selbstbild gegen Tipp. „Kann ich nicht beurteilen“ zählt weder als Treffer noch als Fehler. K zählt nie mit. */
+function vergleiche(selbst,fremd){
+  var items=[],bloecke=BLOCKNAMEN.map(function(n,i){return {block:i+1,name:n,treffer:0,gezaehlt:0,offen:0};});
+  for(var i=0;i<ITEMS.length;i++){
+    var s=selbst.items[i],f=fremd.items[i],offen=!!f.skipped||f.value===null;
+    var it={index:i,block:ITEMS[i].b,control:!!ITEMS[i].k,selbst:s.value,tipp:offen?null:f.value,
+      offen:offen,unsicher:!!f.unsure,treffer:offen?null:f.value===s.value};
+    items.push(it);
+    if(it.control)continue;
+    var B=bloecke[it.block-1];
+    if(offen)B.offen++;else{B.gezaehlt++;if(it.treffer)B.treffer++;}
+  }
+  return {items:items,bloecke:bloecke};
+}
+
+/* Wo antworten beide über sich selbst gleich? Ohne K. */
+function gleichheit(sA,sB){
+  var bloecke=BLOCKNAMEN.map(function(n,i){return {block:i+1,name:n,gleich:0,gesamt:0,verschieden:[]};});
+  for(var i=0;i<ITEMS.length;i++){
+    if(ITEMS[i].k)continue;
+    var B=bloecke[ITEMS[i].b-1];B.gesamt++;
+    if(sA.items[i].value===sB.items[i].value)B.gleich++;else B.verschieden.push(i);
+  }
+  return bloecke;
+}
+
+/* Projektionsrate, gleiche Rechnung wie projectionRate() in index.html: Tipp gleich eigene Selbstantwort, ohne K und ohne Offene. */
+function projektion(selbstDesTippers,fremd){
+  var same=0,tot=0;
+  for(var i=0;i<ITEMS.length;i++){
+    if(ITEMS[i].k)continue;
+    var f=fremd.items[i];
+    if(f.skipped||f.value===null)continue;
+    tot++;if(f.value===selbstDesTippers.items[i].value)same++;
+  }
+  return tot?{gleich:same,gesamt:tot,prozent:Math.round(same/tot*100)}:null;
+}
+
+function highlights(v){
+  var h={sicherDaneben:[],unsicherRichtig:[]};
+  v.items.forEach(function(it){
+    if(it.control||it.offen)return;
+    if(!it.unsicher&&!it.treffer)h.sicherDaneben.push(it.index);
+    if(it.unsicher&&it.treffer)h.unsicherRichtig.push(it.index);
+  });
+  return h;
+}
+function beideDaneben(v1,v2){
+  var out=[];
+  for(var i=0;i<ITEMS.length;i++){
+    if(ITEMS[i].k)continue;
+    if(v1.items[i].treffer===false&&v2.items[i].treffer===false)out.push(i);
+  }
+  return out;
+}
+
+/* Qualitätsprüfung für den Gruppenbericht. Im Paar-Modus nicht angezeigt.
+   Annahme: „Alles sagen“ (Item 9) passt zu „Hätte weniger sagen sollen“ (K), „Etwas zurückhalten“ zu „mehr“.
+   Straight-Lining über die Position ist aus dem Code nicht erkennbar, weil die Optionsreihenfolge
+   pro Bildschirm zufällig ist und nicht gespeichert wird. */
+function qualitaet(d){
+  var i9=d.items[8],k=d.items[K_INDEX],schnell=0,n=0;
+  d.items.forEach(function(it){n++;if(it.time===0)schnell++;});
+  return {
+    kPasst:(i9.value===null||k.value===null)?null:i9.value===k.value,
+    anteilUnterZweiSekunden:n?schnell/n:0
+  };
+}
+
+function text(item,v){return v===0?item.a:v===1?item.z:null;}
+
+root.AUSW={VERSION:VERSION,K_INDEX:K_INDEX,BLOCKNAMEN:BLOCKNAMEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,
+  norm:norm,extrahiere:extrahiere,lies:lies,findePaar:findePaar,vergleiche:vergleiche,gleichheit:gleichheit,
+  projektion:projektion,highlights:highlights,beideDaneben:beideDaneben,qualitaet:qualitaet,text:text};
+})(typeof window!=="undefined"?window:this);
+</script>
+
+<script>
+/* ===== Oberfläche: Paar-Modus ===== */
+"use strict";
+(function(){
+var A=window.AUSW, STORE="pt13-paar", APP_STORE="pt-v13";
+var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+var P=load(), M=null, lastKey=null, meldung="";
+
+function load(){try{var o=JSON.parse(localStorage.getItem(STORE)||"null");if(o&&Array.isArray(o.codes))return {codes:o.codes,auf:o.auf||{},pos:o.pos||0};}catch(e){}return {codes:[],auf:{},pos:0};}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(P));}catch(e){}}
+function app(){return document.getElementById("app");}
+function setDock(h){document.getElementById("dock").innerHTML=h;}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function dock(back,next,dis){
+  return '<div>'+(back?'<button class="btn ghost" id="back">'+back+'</button>':'<span></span>')+
+    (next?'<button class="btn" id="next"'+(dis?" disabled":"")+'>'+next+'</button>':'')+'</div>';
+}
+
+/* Eigene Codes liegen schon auf diesem Handy, wenn hier auch ausgefüllt wurde. Nur lesen, nie schreiben. */
+function eigene(){
+  try{var o=JSON.parse(localStorage.getItem(APP_STORE)||"null");
+    if(o&&o.codes)return {name:o.name||"",codes:Object.keys(o.codes).map(function(k){return o.codes[k];})};
+  }catch(e){}
+  return {name:"",codes:[]};
+}
+
+/* Modell aus allen bekannten Codes neu aufbauen */
+function build(){
+  var own=eigene(), alle=own.codes.concat(P.codes), seen={}, uniq=[];
+  alle.forEach(function(c){if(!seen[c]){seen[c]=1;uniq.push(c);}});
+  var r=A.lies(uniq,window.PT13.decode), paar=A.findePaar(r.gut,own.name);
+  var m={own:own,fehler:r.fehler,paar:paar,rich:[],screens:["start"]};
+  if(paar){
+    /* Richtung: „über“ ist die Person, deren Selbstbild gilt; „tipper“ hat sie eingeschätzt. */
+    [[paar.a,paar.b],[paar.b,paar.a]].forEach(function(x){
+      var ueber=x[0],tipper=x[1];
+      if(ueber.selbst&&tipper.tipp){
+        var v=A.vergleiche(ueber.selbst.data,tipper.tipp.data);
+        m.rich.push({ueber:ueber.name,tipper:tipper.name,v:v,h:A.highlights(v),
+          proj:tipper.selbst?A.projektion(tipper.selbst.data,tipper.tipp.data):null});
+      }
+    });
+    m.beide=(paar.a.selbst&&paar.b.selbst);
+    if(m.rich.length)m.screens.push("b1","b2","b3","b4","highlights");
+    if(paar.a.selbst||paar.b.selbst)m.screens.push("gedanken");
+    if(m.rich.length)m.screens.push("ende");
+  }
+  if(P.pos>=m.screens.length)P.pos=0;
+  return m;
+}
+
+function frame(key,night){
+  if(key!==lastKey){lastKey=key;window.scrollTo(0,0);
+    if(!RM){var a=app();a.classList.remove("in");void a.offsetWidth;a.classList.add("in");}}
+  document.body.classList.toggle("night",!!night);
+  var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=night?"#101319":"#201814";
+  bar();
+}
+function blockItems(b){var out=[];A.ITEMS.forEach(function(it,i){if(it.b===b&&!it.k)out.push(i);});return out;}
+function bar(){
+  var p=document.getElementById("bar"),cur=M.screens[P.pos];
+  if(cur==="start"){p.innerHTML="";p.classList.remove("on");return;}
+  var html="";
+  M.screens.slice(1).forEach(function(s,i){
+    var idx=i+1,f=idx<P.pos?1:idx>P.pos?0:1;
+    if(idx===P.pos&&s.charAt(0)==="b"&&s.length===2){var its=blockItems(+s.charAt(1));f=its.filter(function(i){return P.auf["i"+i];}).length/its.length;}
+    if(idx===P.pos&&s==="gedanken")f=A.GEDANKEN.filter(function(g,j){return P.auf["g"+j];}).length/A.GEDANKEN.length;
+    html+='<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';
+  });
+  p.innerHTML=html;p.classList.add("on");
+}
+function nav(d){P.pos=Math.max(0,Math.min(M.screens.length-1,P.pos+d));save();render();}
+function wireNav(){
+  var b=document.getElementById("back"),n=document.getElementById("next");
+  if(b)b.onclick=function(){nav(-1);};
+  if(n)n.onclick=function(){nav(1);};
+}
+
+function render(){
+  if(!window.PT13||!A){
+    app().innerHTML='<h2>decoder.js fehlt</h2><p class="dim">Die Auswertung braucht die Datei decoder.js im selben Ordner wie diese Seite.</p>';
+    setDock("");return;
+  }
+  M=build();
+  var s=M.screens[P.pos];
+  if(s==="start")return start();
+  if(s==="highlights")return hl();
+  if(s==="gedanken")return ged();
+  if(s==="ende")return ende();
+  return block(+s.charAt(1));
+}
+
+/* ---------- Start: vier Codes ---------- */
+function start(){
+  frame("start");
+  var p=M.paar, an=p?p.a.name:null, bn=p&&p.b.name?p.b.name:null;
+  function slot(label,e){return '<div class="slot'+(e?" ok":"")+'"><span class="who">'+label+'</span><span class="st">'+(e?"liegt vor":"fehlt noch")+'</span></div>';}
+  var slots;
+  if(!p)slots=slot("Person 1 über sich",0)+slot("Person 1 über Person 2",0)+slot("Person 2 über sich",0)+slot("Person 2 über Person 1",0);
+  else{
+    var B=bn?esc(bn):"die zweite Person";
+    slots=slot(esc(an)+" über sich",p.a.selbst)+slot(esc(an)+" über "+B,p.a.tipp)+
+      slot((bn?esc(bn):"Die zweite Person")+" über sich",p.b.selbst)+slot((bn?esc(bn):"Die zweite Person")+" über "+esc(an),p.b.tipp);
+  }
+  var notes=[];
+  if(M.own.codes.length)notes.push("Die Codes, die auf diesem Handy entstanden sind, wurden automatisch geladen.");
+  var warn=[];
+  if(meldung)warn.push(meldung);
+  M.fehler.forEach(function(f){warn.push("Ein Code ist nicht lesbar ("+f.error+"). Vermutlich wurde er nicht vollständig kopiert.");});
+  if(p&&p.unbenutzt.length){
+    warn.push(p.unbenutzt.length+(p.unbenutzt.length===1?" Code passt":" Codes passen")+" nicht zu diesem Paar: "+
+      p.unbenutzt.map(function(e){var d=e.data;return d.name+(d.target?" über "+d.target:" über sich")+" (Gruppe „"+d.group+"“)";}).join(", ")+
+      ". Prüft Gruppenname und Schreibweise der Vornamen.");
+  }
+  var n=p?p.teile.length:0, bereit=M.rich.length>0;
+  var lage=n===4?"Alles da. Es kann losgehen."
+    :bereit?"Eine Richtung ist schon vollständig. Ihr könnt starten oder erst die fehlenden Codes ergänzen."
+    :"Für eine Richtung braucht es zwei Codes: was jemand über sich sagt und was der andere über ihn getippt hat.";
+
+  app().innerHTML='<h1>Entweder<br>oder</h1>'+
+    '<p>Die Auswertung zu zweit. Ein Handy reicht, setzt euch zusammen. Ihr seht Frage für Frage, was der eine über sich sagt und was der andere getippt hat.</p>'+
+    '<div class="callout">Daneben liegen ist kein Zeugnis. Wer sich gut kennt, trifft grob sieben von zehn Fragen. Der Rest ist der interessante Teil.</div>'+
+    '<h2>Eure vier Codes</h2>'+slots+
+    '<p class="hint">'+esc(lage)+(notes.length?" "+esc(notes.join(" ")):"")+'</p>'+
+    '<label for="paste">Codes einfügen</label>'+
+    '<textarea id="paste" placeholder="PT13.…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>'+
+    '<p class="hint">Ganze WhatsApp-Nachrichten gehen auch, alles außer den Codes wird ignoriert. Nichts davon verlässt dieses Handy.</p>'+
+    '<div style="margin-top:1rem"><button class="btn line" id="add">Codes hinzufügen</button></div>'+
+    '<p class="warn" role="alert">'+warn.map(esc).join("<br>")+'</p>'+
+    '<div class="foot"><button class="link" id="reset">Eingefügte Codes und Spielstand löschen</button></div>';
+  setDock(dock(null,P.pos===0&&Object.keys(P.auf).length?"Weiterspielen":"Auswertung starten",!bereit));
+  meldung="";
+  document.getElementById("add").onclick=function(){
+    var found=A.extrahiere(document.getElementById("paste").value);
+    if(!found.length){meldung="Im eingefügten Text steckt kein Code. Ein Code beginnt mit PT13.";render();return;}
+    found.forEach(function(c){if(P.codes.indexOf(c)<0)P.codes.push(c);});
+    save();render();
+  };
+  document.getElementById("reset").onclick=function(){
+    if(confirm("Eingefügte Codes und aufgedeckte Karten löschen? Die Codes in der Test-App bleiben erhalten.")){
+      try{localStorage.removeItem(STORE);}catch(e){}P={codes:[],auf:{},pos:0};render();}
+  };
+  wireNav();
+}
+
+/* ---------- Blöcke: raten, tippen, aufdecken ---------- */
+function verdict(r,it){
+  var item=A.ITEMS[it.index];
+  if(it.offen)return '<span class="verdict">'+esc(r.tipper)+' hat hier offen gelassen. <span class="tag">zählt nicht</span></span>';
+  return '<span class="verdict">'+esc(r.tipper)+' tippte: '+esc(A.text(item,it.tipp))+
+    ' <span class="tag '+(it.treffer?"hit":"miss")+'">'+(it.treffer?"Treffer":"daneben")+'</span>'+
+    (it.unsicher?' <span class="tag">war unsicher</span>':"")+'</span>';
+}
+function cardHtml(i){
+  var item=A.ITEMS[i],open=!!P.auf["i"+i];
+  var head='<span class="q">'+esc(item.q)+'</span><span class="ab">'+esc(item.a)+' <em>oder</em> '+esc(item.z)+'</span>';
+  if(!open)return '<button class="card" data-i="'+i+'">'+head+'<span class="tap">Aufdecken</span></button>';
+  return '<div class="card open">'+head+M.rich.map(function(r){
+    var it=r.v.items[i];
+    return '<div class="dir"><span class="says">'+esc(r.ueber)+' sagt über sich: <b>'+esc(A.text(item,it.selbst))+'</b></span>'+verdict(r,it)+'</div>';
+  }).join("")+'</div>';
+}
+function tallyHtml(b){
+  var its=blockItems(b),zu=its.filter(function(i){return !P.auf["i"+i];}).length;
+  if(zu)return '<div class="tally"><p class="dim">Noch '+zu+(zu===1?" Karte":" Karten")+' verdeckt. Die Zählung kommt, wenn alle offen sind.</p></div>';
+  return '<div class="tally">'+M.rich.map(function(r){
+    var B=r.v.bloecke[b-1];
+    return '<p>'+esc(r.tipper)+' über '+esc(r.ueber)+': <span class="n">'+B.treffer+' von '+B.gezaehlt+'</span>'+
+      (B.offen?' <span class="dim">('+B.offen+' offen gelassen)</span>':"")+'</p>';
+  }).join("")+'</div>';
+}
+function block(b){
+  frame("b"+b);
+  var its=blockItems(b);
+  app().innerHTML='<div class="meta"><b>Block '+b+' von 4</b><span>'+esc(M.paar.a.name)+(M.paar.b.name?" und "+esc(M.paar.b.name):"")+'</span></div>'+
+    '<h2>'+esc(A.BLOCKNAMEN[b-1])+'</h2>'+
+    (b===1?'<p class="dim">Lest die Frage, ratet laut, redet kurz. Dann aufdecken.</p>':"")+
+    '<div id="cards">'+its.map(cardHtml).join("")+'</div>'+
+    '<div id="tally">'+tallyHtml(b)+'</div>'+
+    '<div class="foot"><button class="link" id="all">Alle Karten dieses Blocks aufdecken</button></div>';
+  setDock(dock("Zurück",b<4?"Nächster Block":"Weiter",false));
+  function refresh(){document.getElementById("tally").innerHTML=tallyHtml(b);bar();}
+  document.getElementById("cards").onclick=function(e){
+    var c=e.target.closest?e.target.closest("button.card"):null;if(!c)return;
+    var i=+c.dataset.i;P.auf["i"+i]=1;save();
+    var t=document.createElement("div");t.innerHTML=cardHtml(i);c.parentNode.replaceChild(t.firstChild,c);refresh();
+  };
+  document.getElementById("all").onclick=function(){its.forEach(function(i){P.auf["i"+i]=1;});save();render();};
+  wireNav();
+}
+
+/* ---------- Highlights ---------- */
+function liItem(i,detail){return '<li><span class="q">'+esc(A.ITEMS[i].q)+'</span><span class="d">'+detail+'</span></li>';}
+function hl(){
+  frame("highlights");
+  var h='<div class="meta"><b>Worüber es sich zu reden lohnt</b></div><h2>Eure Highlights</h2>';
+
+  h+='<h3>Sicher getippt und daneben</h3><p class="dim">Woher kam die Sicherheit? Und passt das Selbstbild, oder sieht der andere etwas, das man selbst nicht sieht?</p>';
+  var any=false,L="";
+  M.rich.forEach(function(r){r.h.sicherDaneben.forEach(function(i){any=true;var it=r.v.items[i],item=A.ITEMS[i];
+    L+=liItem(i,esc(r.tipper)+' war sicher: '+esc(A.text(item,it.tipp))+'. '+esc(r.ueber)+' sagt: '+esc(A.text(item,it.selbst))+'.');});});
+  h+=any?'<ul class="list">'+L+'</ul>':'<p>Keine. Wo ihr euch sicher wart, lagt ihr richtig.</p>';
+
+  h+='<h3>Unsicher getippt und trotzdem getroffen</h3><p class="dim">Was hat euch den richtigen Riecher gegeben?</p>';
+  any=false;L="";
+  M.rich.forEach(function(r){r.h.unsicherRichtig.forEach(function(i){any=true;var it=r.v.items[i];
+    L+=liItem(i,esc(r.tipper)+' lag richtig: '+esc(A.text(A.ITEMS[i],it.selbst))+'.');});});
+  h+=any?'<ul class="list">'+L+'</ul>':'<p>Keine.</p>';
+
+  if(M.rich.length===2){
+    var bd=A.beideDaneben(M.rich[0].v,M.rich[1].v);
+    h+='<h3>Hier lagt ihr beide daneben</h3><p class="dim">Woran könnte das liegen?</p>';
+    h+=bd.length?'<ul class="list">'+bd.map(function(i){return liItem(i,esc(A.ITEMS[i].a)+' oder '+esc(A.ITEMS[i].z));}).join("")+'</ul>':'<p>Keine Frage, bei der ihr beide danebenlagt.</p>';
+  }
+
+  if(M.beide){
+    var g=A.gleichheit(M.paar.a.selbst.data,M.paar.b.selbst.data);
+    h+='<h3>Wo tickt ihr gleich, wo verschieden?</h3><p class="dim">Verglichen wird, was jeder über sich selbst gesagt hat.</p><ul class="list">';
+    g.forEach(function(B){
+      h+='<li><span class="q">'+esc(B.name)+'</span><span class="d">Bei '+B.gleich+' von '+B.gesamt+' Fragen gleich.</span>'+
+        (B.verschieden.length?'<details><summary>Hier tickt ihr verschieden</summary><ul class="list">'+B.verschieden.map(function(i){
+          return liItem(i,esc(M.paar.a.name)+': '+esc(A.text(A.ITEMS[i],M.paar.a.selbst.data.items[i].value))+'. '+
+            esc(M.paar.b.name)+': '+esc(A.text(A.ITEMS[i],M.paar.b.selbst.data.items[i].value))+'.');}).join("")+'</ul></details>':"")+'</li>';
+    });
+    h+='</ul>';
+  }
+
+  var pr=M.rich.filter(function(r){return r.proj;});
+  if(pr.length){
+    h+='<h3>Wie viel von dir steckt in deinem Tipp?</h3><div class="stats">'+pr.map(function(r){
+      return '<div><p class="stat">'+r.proj.prozent+'%</p><p class="dim">'+esc(r.tipper)+': bei '+r.proj.gleich+' von '+r.proj.gesamt+' Fragen dasselbe getippt wie bei sich selbst.</p></div>';}).join("")+'</div>'+
+      '<p class="dim">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen anderer ein Stück weit sich selbst. Das passiert jedem, nur unterschiedlich stark. Bei Paaren, die sich ähnlich sind, ist ein hoher Wert außerdem schlicht richtig.</p>';
+  }
+  app().innerHTML=h;
+  setDock(dock("Zurück","Weiter",false));wireNav();
+}
+
+/* ---------- Gedankenexperimente ---------- */
+function gedCard(j){
+  var g=A.GEDANKEN[j],open=!!P.auf["g"+j];
+  var head='<span class="q">'+esc(g.q)+'</span><span class="ab">'+esc(g.a)+' <em>oder</em> '+esc(g.z)+'</span>';
+  if(!open)return '<button class="card" data-j="'+j+'">'+head+'<span class="tap">Aufdecken</span></button>';
+  var pa=M.paar.a,pb=M.paar.b,va=pa.selbst?pa.selbst.data.gedanken[j].value:null,vb=pb.selbst?pb.selbst.data.gedanken[j].value:null;
+  function row(p,v){return p.selbst?'<span class="says">'+esc(p.name)+': <b>'+esc(A.text(g,v))+'</b></span>':"";}
+  return '<div class="card open">'+head+'<div class="dir">'+row(pa,va)+row(pb,vb)+
+    (pa.selbst&&pb.selbst?'<span class="verdict"><span class="tag'+(va===vb?" hit":"")+'">'+(va===vb?"gleich":"verschieden")+'</span></span>':"")+'</div></div>';
+}
+function ged(){
+  frame("gedanken",true);
+  app().innerHTML='<div class="meta"><b>Ohne Tipp, ohne Zählung</b></div><h2>Acht Fragen für das Gespräch danach</h2>'+
+    '<p class="dim">Hier hat niemand geraten. Ihr seht nur, was jeder für sich geantwortet hat.</p>'+
+    '<div id="cards">'+A.GEDANKEN.map(function(g,j){return gedCard(j);}).join("")+'</div>';
+  setDock(dock("Zurück",M.screens[P.pos+1]?"Weiter":null,false));
+  document.getElementById("cards").onclick=function(e){
+    var c=e.target.closest?e.target.closest("button.card"):null;if(!c)return;
+    var j=+c.dataset.j;P.auf["g"+j]=1;save();
+    var t=document.createElement("div");t.innerHTML=gedCard(j);c.parentNode.replaceChild(t.firstChild,c);bar();
+  };
+  wireNav();
+}
+
+/* ---------- Ende: Zählung pro Block, nie eine Gesamtzahl ---------- */
+function ende(){
+  frame("ende");
+  var h='<div class="meta"><b>Fertig</b></div><h2>Das war’s</h2>'+
+    '<table><thead><tr><th>Block</th>'+M.rich.map(function(r){return '<th>'+esc(r.tipper)+' über '+esc(r.ueber)+'</th>';}).join("")+'</tr></thead><tbody>'+
+    A.BLOCKNAMEN.map(function(n,b){return '<tr><td>'+esc(n)+'</td>'+M.rich.map(function(r){var B=r.v.bloecke[b];return '<td class="n">'+B.treffer+' von '+B.gezaehlt+'</td>';}).join("")+'</tr>';}).join("")+
+    '</tbody></table>'+
+    '<p class="dim">Zur Einordnung: Raten ergäbe die Hälfte. Bei Menschen, die sich gut kennen, sind grob 65 bis 75 Prozent normal. Alltag ist meist am leichtesten, Metaphysik am schwersten, weil man sie niemandem ansieht.</p>'+
+    '<div class="callout">Welche Antwort hat euch am meisten überrascht?</div>';
+  app().innerHTML=h;
+  setDock(dock("Zurück",null,false));wireNav();
+}
+
+render();
+})();
+</script>
+</body>
+</html>
