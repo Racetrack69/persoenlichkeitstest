@@ -1,26 +1,21 @@
-/* PT13-Decoder, Bereich 2. Liest einen Code aus index.html v1.3 und gibt ein lesbares Objekt zurück.
-   Unabhängig vom Encoder nach code-format.md geschrieben. Läuft in Node und im Browser. */
+/* PT14-Decoder, Bereich 2. Liest einen Code aus index.html v1.4 (ein Code pro Person).
+   Nach code-format.md geschrieben, unabhängig vom Encoder. Läuft in Node und im Browser. */
 (function(root){
 "use strict";
-var PREFIX="PT13", N_ITEMS=33, N_GED=8, K_INDEX=22;
-var BLOCK_OF=[];for(var i=0;i<33;i++)BLOCK_OF.push(i<8?1:i<16?2:i<27?3:4);
-var KNOWN=["fast täglich","regelmäßig","selten"];
+var PREFIX="PT14", N=33, NG=8, BYTES=36;
+var BLOCK_OF=[];for(var i=0;i<N;i++)BLOCK_OF.push(i<8?1:i<16?2:i<27?3:4);
 var ANSWER=["A","B","A (unsicher)","B (unsicher)","kann nicht beurteilen"];
 var TIME=["unter 2 s","2 bis 5 s","5 bis 15 s","ab 15 s"];
 
 function b64urlToBytes(s){
-  s=s.replace(/-/g,"+").replace(/_/g,"/");
-  while(s.length%4)s+="=";
-  var bin;
-  if(typeof atob==="function")bin=atob(s);
-  else bin=Buffer.from(s,"base64").toString("binary");
-  var out=new Array(bin.length);
-  for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
-  return out;
+  if(!/^[A-Za-z0-9_-]*$/.test(s))throw new Error("Unerlaubte Zeichen");
+  s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";
+  var bin=typeof atob==="function"?atob(s):Buffer.from(s,"base64").toString("binary");
+  var out=new Array(bin.length);for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out;
 }
-function bytesToUtf8(bytes){
-  if(typeof TextDecoder==="function")return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
-  return Buffer.from(bytes).toString("utf8");
+function bytesToUtf8(b){
+  if(typeof TextDecoder==="function")return new TextDecoder("utf-8").decode(new Uint8Array(b));
+  return Buffer.from(b).toString("utf8");
 }
 function BitR(bytes){this.b=bytes;this.pos=0;}
 BitR.prototype.read=function(n){
@@ -36,76 +31,54 @@ BitR.prototype.read=function(n){
 function decode(code){
   code=String(code).trim();
   var parts=code.split(".");
-  if(parts.length!==4)throw new Error("Erwartet 4 Teile, gefunden "+parts.length);
+  if(parts.length!==3)throw new Error("Erwartet 3 Teile, gefunden "+parts.length);
   if(parts[0]!==PREFIX)throw new Error("Falsches Präfix: "+parts[0]+" (erwartet "+PREFIX+")");
-  var type=parts[1];
-  if(type!=="S"&&type!=="F")throw new Error("Typ muss S oder F sein: "+type);
   var head;
-  try{head=JSON.parse(bytesToUtf8(b64urlToBytes(parts[2])));}catch(e){throw new Error("Header nicht lesbar: "+e.message);}
-  ["g","n","t","k"].forEach(function(f){if(!(f in head))throw new Error("Header-Feld fehlt: "+f);});
-  var bytes=b64urlToBytes(parts[3]);
-  var expect=type==="S"?16:21;
-  if(bytes.length!==expect)throw new Error("Nutzdaten: "+bytes.length+" Byte, erwartet "+expect);
-  var r=new BitR(bytes), out={
-    version:PREFIX, type:type==="S"?"self":"other",
-    group:head.g, name:head.n, target:type==="S"?null:head.t,
-    known:head.k, knownLabel:(head.k===null||head.k===undefined)?null:(KNOWN[head.k]||("unbekannt: "+head.k)),
-    items:[], gedanken:null, warnings:[]
-  };
-  if(type==="S"){
-    if(head.t!=="")out.warnings.push("Selbstcode mit Zielperson im Header: "+head.t);
-    var ans=[],ged=[],t=[],i;
-    for(i=0;i<N_ITEMS;i++)ans.push(r.read(1));
-    for(i=0;i<N_GED;i++)ged.push(r.read(1));
-    for(i=0;i<N_ITEMS+N_GED;i++)t.push(r.read(2));
-    for(i=0;i<N_ITEMS;i++)out.items.push({index:i,block:BLOCK_OF[i],control:i===K_INDEX,value:ans[i],label:ANSWER[ans[i]],time:t[i],timeLabel:TIME[t[i]]});
-    out.gedanken=[];
-    for(i=0;i<N_GED;i++)out.gedanken.push({index:i,value:ged[i],label:ANSWER[ged[i]],time:t[N_ITEMS+i],timeLabel:TIME[t[N_ITEMS+i]]});
-    var pad=r.read(5);if(pad!==0)out.warnings.push("Füllbits nicht 0");
-  }else{
-    if(!head.t)out.warnings.push("Fremdcode ohne Zielperson");
-    if(head.k===null||head.k===undefined||head.k<0||head.k>2)out.warnings.push("Bekanntheitsgrad fehlt oder ungültig: "+head.k);
-    var skipped=0;
-    for(var j=0;j<N_ITEMS;j++){
-      var a=r.read(3),tk=r.read(2);
-      if(a>4)out.warnings.push("Item "+j+": ungültiger Antwortwert "+a);
-      var it={index:j,block:BLOCK_OF[j],control:j===K_INDEX,raw:a,
-        value:a===4?null:(a&1), unsure:a===2||a===3, skipped:a===4,
-        label:ANSWER[a]||("ungültig "+a), time:tk, timeLabel:TIME[tk]};
-      if(it.skipped)skipped++;
-      out.items.push(it);
-    }
-    out.skipped=skipped;
-    if(skipped>5)out.warnings.push(skipped+" übersprungen, Limit ist 5");
-    var pad2=r.read(3);if(pad2!==0)out.warnings.push("Füllbits nicht 0");
+  try{head=JSON.parse(bytesToUtf8(b64urlToBytes(parts[1])));}catch(e){throw new Error("Header nicht lesbar: "+e.message);}
+  if(!head||typeof head.n!=="string"||typeof head.p!=="string")throw new Error("Header-Feld fehlt: n oder p");
+  var bytes=b64urlToBytes(parts[2]);
+  if(bytes.length!==BYTES)throw new Error("Nutzdaten: "+bytes.length+" Byte, erwartet "+BYTES);
+  var r=new BitR(bytes), i, out={version:PREFIX,name:head.n,partner:head.p,self:{items:[],gedanken:[]},other:{items:[],skipped:0},warnings:[]};
+  var sv=[],gv=[],ov=[];
+  for(i=0;i<N;i++)sv.push(r.read(1));
+  for(i=0;i<NG;i++)gv.push(r.read(1));
+  for(i=0;i<N;i++)ov.push(r.read(3));
+  for(i=0;i<N;i++)out.self.items.push({index:i,block:BLOCK_OF[i],value:sv[i],label:ANSWER[sv[i]],time:r.read(2)});
+  for(i=0;i<NG;i++)out.self.gedanken.push({index:i,value:gv[i],label:ANSWER[gv[i]],time:r.read(2)});
+  for(i=0;i<N;i++){
+    var a=ov[i];
+    if(a>4)out.warnings.push("Frage "+(i+1)+": ungültiger Antwortwert "+a);
+    var it={index:i,block:BLOCK_OF[i],raw:a,value:a>=4?null:(a&1),unsure:a===2||a===3,skipped:a===4,label:ANSWER[a]||("ungültig "+a),time:r.read(2)};
+    if(it.skipped)out.other.skipped++;
+    out.other.items.push(it);
   }
+  out.self.items.forEach(function(it){it.timeLabel=TIME[it.time];});
+  out.self.gedanken.forEach(function(it){it.timeLabel=TIME[it.time];});
+  out.other.items.forEach(function(it){it.timeLabel=TIME[it.time];});
+  if(out.other.skipped>5)out.warnings.push(out.other.skipped+" Mal „kann nicht beurteilen“, Limit ist 5");
   return out;
 }
 
 function toText(d){
-  var L=[];
-  L.push("PT13 "+(d.type==="self"?"Selbstteil":"Fremdteil")+" · Gruppe: "+d.group+" · von: "+d.name+(d.target?" · über: "+d.target+" · kennt: "+d.knownLabel:""));
-  d.items.forEach(function(it){
-    var num=it.index<K_INDEX?it.index+1:it.index; /* Itemliste zählt K nicht mit */
-    L.push((it.control?"K   ":"#"+String(num).padStart(2,"0")+" ")+"B"+it.block+"  "+it.label.padEnd(22)+" "+it.timeLabel);
-  });
-  if(d.gedanken){L.push("Gedanken:");d.gedanken.forEach(function(g){L.push("G"+(g.index+1)+"   "+g.label.padEnd(22)+" "+g.timeLabel);});}
-  if(d.skipped!==undefined)L.push("Übersprungen: "+d.skipped+" von 5");
+  var L=["PT14 · von: "+d.name+" · über: "+d.partner];
+  L.push("Nr  Block  über sich        über "+d.partner);
+  for(var i=0;i<N;i++){
+    var s=d.self.items[i],o=d.other.items[i];
+    L.push(String(i+1).padStart(2,"0")+"  B"+s.block+"     "+s.label.padEnd(16)+" "+o.label);
+  }
+  L.push("Gedanken: "+d.self.gedanken.map(function(g){return "G"+(g.index+1)+" "+g.label;}).join(", "));
   if(d.warnings.length)L.push("Hinweise: "+d.warnings.join("; "));
   return L.join("\n");
 }
 
-/* Sammeldatei: ein Code pro Zeile, alles ohne PT13-Präfix wird ignoriert */
+/* Findet alle PT14-Codes in beliebigem Text, etwa in kopierten WhatsApp-Nachrichten. */
+function findCodes(text){return String(text).match(/PT14\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
 function decodeAll(text){
-  var res=[];
-  String(text).split(/\r?\n/).forEach(function(line,n){
-    line=line.trim();if(line.indexOf(PREFIX+".")!==0)return;
-    try{res.push({line:n+1,ok:true,data:decode(line)});}
-    catch(e){res.push({line:n+1,ok:false,error:e.message,code:line});}
+  return findCodes(text).map(function(c){
+    try{return {ok:true,code:c,data:decode(c)};}catch(e){return {ok:false,code:c,error:e.message};}
   });
-  return res;
 }
 
-var api={decode:decode,decodeAll:decodeAll,toText:toText};
-if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT13=api;
+var api={PREFIX:PREFIX,decode:decode,decodeAll:decodeAll,findCodes:findCodes,toText:toText};
+if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT14=api;
 })(typeof window!=="undefined"?window:this);

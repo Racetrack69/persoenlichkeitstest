@@ -3,577 +3,532 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#201814">
-<title>Entweder Oder: Auswertung zu zweit</title>
+<meta name="theme-color" content="#17110E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Entweder Oder">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Entweder Oder: Aufdecken</title>
 <style>
-/* Optik: übernimmt die Tokens der Teilnehmerseite (Bereich 4). Keine eigene Gestaltungslinie. */
+@font-face{font-family:Literata;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/literata-latin-normal.woff2") format("woff2")}
+@font-face{font-family:Literata;font-style:italic;font-weight:400;font-display:swap;src:url("fonts/literata-latin-italic.woff2") format("woff2")}
 :root{
   color-scheme:dark;
-  --bg:#201814; --surface:#2B211B; --surface-2:#352A22; --line:#3F332B; --line-soft:#33291F;
-  --ink:#F4EBDD; --ink-soft:#B9AB98; --ink-mute:#7E7266;
-  --accent:#E0A95A; --accent-ink:#201814; --accent-soft:rgba(224,169,90,.14); --accent-line:rgba(224,169,90,.6);
-  --flag:#D98B75; --flag-soft:rgba(217,139,117,.12);
-  --serif: ui-serif,"New York","Iowan Old Style",Charter,Georgia,"Noto Serif",serif;
-  --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --table:#17110E; --on:#EFE4D2; --on-soft:#B3A493; --on-mute:#857767; --on-line:#3A2F27;
+  --card:#F2E8D8; --card-ink:#2A1E17; --card-soft:#6B5747; --card-line:#DDCFB9;
+  --sand:#E7D7BE; --deck1:#C9B99F; --deck2:#8F7F69;
+  --accent:#E9B872; --accent-ink:#1E1510; --btn:#F2E8D8; --flag:#E39A82;
+  --shadow:0 18px 40px rgba(0,0,0,.45); --shadow-s:0 10px 24px rgba(0,0,0,.4);
+  --serif:Literata,ui-serif,"New York",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
 }
-body.night{--bg:#101319;--surface:#181C25;--surface-2:#20252F;--line:#2B3140;--line-soft:#232837;--accent-ink:#101319}
-
+body.night{
+  --table:#0E1117; --on-line:#262D39;
+  --card:#232A36; --card-ink:#EDE6DA; --card-soft:#A7AFBC; --card-line:#353D4B;
+  --sand:#2C3443; --deck1:#1C222D; --deck2:#151A22; --btn:#E6DED1;
+  --shadow:0 18px 40px rgba(0,0,0,.6); --shadow-s:0 10px 24px rgba(0,0,0,.55);
+}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh;transition:background-color .7s ease}
-::selection{background:var(--accent);color:var(--accent-ink)}
+body{background:var(--table);color:var(--on);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh;transition:background-color .7s ease;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit}
+button:focus-visible,a:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 
-.progress{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:5px;padding:calc(env(safe-area-inset-top) + 12px) 16px 0;opacity:0;transition:opacity .3s}
+.progress{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:4px;padding:calc(env(safe-area-inset-top) + 10px) 20px 0;opacity:0;transition:opacity .3s;pointer-events:none}
 .progress.on{opacity:1}
-.seg{flex:1;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.seg{flex:1;height:2px;border-radius:2px;background:var(--on-line);overflow:hidden}
 .seg i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
 
-.wrap{max-width:30rem;margin:0 auto;padding:calc(env(safe-area-inset-top) + 3.5rem) 1.25rem calc(env(safe-area-inset-bottom) + 8rem)}
-.wrap.in{animation:appear .22s ease both}
-@keyframes appear{from{opacity:0}to{opacity:1}}
+.screen{max-width:30rem;min-height:100dvh;margin:0 auto;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 30px) 20px calc(env(safe-area-inset-bottom) + 14px)}
+.top{display:flex;justify-content:space-between;align-items:center;min-height:44px;padding:0 4px 10px;font-size:14px;color:var(--on-soft)}
+.top b{font-weight:500;color:var(--on)}
+.txt{background:none;border:0;padding:10px 4px;margin:0 -4px;font-size:15px;color:var(--on-soft);cursor:pointer}
+.foot{display:flex;justify-content:space-between;align-items:center;min-height:48px;padding-top:10px}
 
-.meta{display:flex;justify-content:space-between;gap:1rem;font-size:.875rem;color:var(--ink-soft);margin-bottom:1.5rem}
-.meta b{font-weight:500;color:var(--ink)}
-h1{font-family:var(--serif);font-weight:400;font-size:3rem;line-height:.95;letter-spacing:-.015em;margin:0 0 1.5rem}
-h2{font-family:var(--serif);font-weight:400;font-size:1.625rem;line-height:1.15;letter-spacing:-.01em;margin:0 0 1rem}
-h3{font-family:var(--serif);font-weight:400;font-size:1.25rem;line-height:1.2;margin:2.25rem 0 .5rem}
-p{margin:0 0 1rem}
-.dim{color:var(--ink-soft)}
-.hint{color:var(--ink-soft);font-size:.875rem;margin-top:.5rem}
-.warn{color:var(--flag);font-size:.875rem;margin:.75rem 0 0}
+.deck{position:relative;margin-bottom:14px}
+.deck::before,.deck::after{content:"";position:absolute;border-radius:20px}
+.deck::after{left:18px;right:18px;top:20px;bottom:-14px;background:var(--deck2)}
+.deck::before{left:9px;right:9px;top:10px;bottom:-7px;background:var(--deck1);z-index:1}
+.qcard{position:relative;z-index:2;background:var(--card);color:var(--card-ink);border-radius:20px;box-shadow:var(--shadow);padding:20px 24px 24px;transition:background-color .7s ease,color .7s ease}
+.qhead{display:flex;justify-content:space-between;gap:12px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--card-soft)}
+.qhead span:last-child{letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.qtext{margin:14px 0 0;font-family:var(--serif);font-size:27px;line-height:1.2;letter-spacing:-.01em;text-wrap:balance}
+.qtext.l{font-size:23px;line-height:1.25}
+
+.hand{margin:auto 0;padding:22px 8px 4px}
+.step{text-align:center;font-family:var(--serif);font-style:italic;font-size:16px;color:var(--on-soft);margin:0 0 12px}
+.acard{display:flex;align-items:center;gap:12px;min-height:68px;border-radius:16px;background:var(--sand);color:var(--card-ink);box-shadow:var(--shadow-s);padding:14px 16px 14px 22px;font-family:var(--serif);font-size:21px;line-height:1.25;text-wrap:balance;transition:background-color .7s ease,color .7s ease,box-shadow .2s ease}
+.acard.a1{transform:rotate(-1deg)}
+.acard.a2{transform:rotate(1deg)}
+.acard .t{flex:1;min-width:0}
+.acard .toks{display:flex;gap:6px;flex:none}
+.acard.hit{box-shadow:0 0 0 2px var(--accent),var(--shadow-s)}
+.oder{text-align:center;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--on-mute);padding:8px 0}
+.tok{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-family:var(--serif);font-size:15px;line-height:1;flex:none}
+.tok.solid{background:var(--card-ink);color:var(--sand)}
+.tok.ring{border:2px solid var(--card-ink);color:var(--card-ink)}
+.pop .acard .tok{animation:pop .32s cubic-bezier(.2,.8,.2,1.2) both}
+.pop .acard .tok+.tok{animation-delay:.12s}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;margin:16px 0 0;font-size:13px;color:var(--on-soft)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend .tok{width:22px;height:22px;font-size:11px}
+.legend .tok.solid{background:var(--on);color:var(--table)}
+.legend .tok.ring{border:1.5px solid var(--on);color:var(--on)}
+.cap{text-align:center;margin:14px 0 0;font-size:15px;color:var(--on)}
+.ask{text-align:center;margin:4px 0 0;font-family:var(--serif);font-style:italic;font-size:19px;color:var(--accent)}
+
+.kicker{margin:0 0 12px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
+h1{margin:0;font-family:var(--serif);font-weight:400;font-size:50px;line-height:1;letter-spacing:-.02em}
+h2{margin:0;font-family:var(--serif);font-weight:400;font-size:30px;line-height:1.12;letter-spacing:-.015em}
+h3{margin:30px 0 4px;font-family:var(--serif);font-weight:400;font-size:21px;line-height:1.25}
+.lead{margin:0;font-size:16px;line-height:1.55;color:var(--on-soft)}
+.lead+.lead{margin-top:10px}
+.btn{appearance:none;display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border:0;border-radius:16px;background:var(--btn);color:var(--accent-ink);font-size:17px;font-weight:600;cursor:pointer;text-decoration:none}
+.btn.line{background:none;border:1.5px solid var(--on-line);color:var(--on)}
+.btn:disabled{opacity:.35;cursor:default}
+.links{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:18px}
+.link{background:none;border:0;padding:8px 0;font-size:14px;color:var(--on-soft);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.warn{margin:12px 0 0;font-size:14px;color:var(--flag)}
 .warn:empty{display:none}
-.callout{border-left:2px solid var(--accent);padding:.25rem 0 .25rem 1rem;margin:1.5rem 0;font-family:var(--serif);font-size:1.125rem;line-height:1.5}
-.divider{border:0;border-top:1px solid var(--line-soft);margin:2rem 0}
 
-/* Start: vier Codes */
-.slot{display:flex;align-items:center;gap:.75rem;width:100%;min-height:3.25rem;padding:.625rem 1.125rem;margin-bottom:.5rem;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-.slot .who{flex:1}
-.slot .st{font-size:.875rem;color:var(--ink-soft);white-space:nowrap}
-.slot.ok{background:none}
-.slot.ok .who{color:var(--ink-soft)}
+.slot{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;padding:12px 18px;margin-top:10px;border-radius:14px;border:1.5px dashed var(--on-line);color:var(--on-soft)}
+.slot.ok{border-style:solid;color:var(--on)}
+.slot .st{font-size:14px;white-space:nowrap}
 .slot.ok .st{color:var(--accent)}
-label{display:block;font-size:.9375rem;color:var(--ink-soft);margin:1.5rem 0 .5rem}
-textarea{display:block;width:100%;min-height:7rem;padding:.875rem 1rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-family:var(--mono);font-size:.8125rem;line-height:1.5;resize:vertical}
-textarea:focus{outline:none;border-color:var(--accent-line)}
+label{display:block;font-size:15px;color:var(--on-soft);margin:22px 0 8px}
+textarea{display:block;width:100%;min-height:96px;padding:12px 14px;border:1.5px solid var(--on-line);border-radius:14px;background:none;color:var(--on);font-family:var(--mono);font-size:13px;line-height:1.5;resize:vertical}
+textarea:focus{outline:none;border-color:var(--accent)}
 
-/* Fragekarten */
-.card{appearance:none;display:block;width:100%;margin:0 0 .625rem;padding:1rem 1.125rem;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;text-align:left}
-button.card{cursor:pointer}
-@media(hover:hover){button.card:hover{background:var(--surface-2);border-color:var(--ink-mute)}}
-button.card:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.card.open{background:none}
-.card .q{display:block;font-family:var(--serif);font-size:1.25rem;line-height:1.25;margin:0 0 .375rem;text-wrap:balance}
-.card .ab{display:block;color:var(--ink-soft);font-size:.9375rem}
-.card .ab em{font-family:var(--serif);color:var(--ink-mute)}
-.card .tap{display:block;margin-top:.75rem;font-size:.875rem;font-weight:600;color:var(--accent)}
-.dir{margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--line-soft);animation:appear .3s ease both}
-.dir .says{display:block}
-.dir .says b{font-family:var(--serif);font-weight:400;font-size:1.1875rem}
-.verdict{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem .5rem;margin-top:.375rem;font-size:.9375rem;color:var(--ink-soft)}
-.tag{display:inline-block;padding:.125rem .625rem;border-radius:999px;font-size:.8125rem;line-height:1.5;border:1px solid var(--line);color:var(--ink-soft)}
-.tag.hit{border-color:var(--accent-line);background:var(--accent-soft);color:var(--ink)}
-.tag.miss{border-color:var(--flag);background:var(--flag-soft);color:var(--ink)}
+.tally{background:var(--card);color:var(--card-ink);border-radius:20px;box-shadow:var(--shadow);padding:20px 24px 24px}
+.tally .who{margin:20px 0 0;font-size:14px;color:var(--card-soft)}
+.tally .n{margin:2px 0 0;font-family:var(--serif);font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums}
+.tally .o{font-size:14px;color:var(--card-soft)}
 
-.tally{margin:1.5rem 0 0;padding:1rem 1.125rem;border:1px solid var(--line);border-radius:10px}
-.tally p{margin:0}
-.tally p+p{margin-top:.375rem}
-.tally .n{font-family:var(--serif);font-size:1.375rem;color:var(--accent);font-variant-numeric:tabular-nums}
-
-.list{list-style:none;margin:.75rem 0 0;padding:0}
-.list li{padding:.75rem 0;border-top:1px solid var(--line-soft)}
-.list li .q{display:block;font-family:var(--serif);font-size:1.0625rem;line-height:1.3}
-.list li .d{display:block;color:var(--ink-soft);font-size:.9375rem;margin-top:.125rem}
-details{margin:.375rem 0 0}
-summary{cursor:pointer;color:var(--ink-soft);font-size:.875rem;text-decoration:underline;text-underline-offset:3px;list-style:none}
+.list{list-style:none;margin:10px 0 0;padding:0}
+.list li{padding:12px 0;border-top:1px solid var(--on-line)}
+.list .q{display:block;font-family:var(--serif);font-size:17px;line-height:1.3;color:var(--on)}
+.list .d{display:block;margin-top:3px;font-size:14px;line-height:1.45;color:var(--on-soft)}
+details{margin-top:4px}
+summary{cursor:pointer;font-size:14px;color:var(--on-soft);text-decoration:underline;text-underline-offset:3px;list-style:none;padding:6px 0}
 summary::-webkit-details-marker{display:none}
-summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-
-.stats{display:flex;gap:1.5rem;margin:.75rem 0}
+.stats{display:flex;gap:18px;margin-top:10px}
 .stats div{flex:1}
-.stat{font-family:var(--serif);font-size:3rem;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent);margin:0 0 .25rem}
+.big{margin:0;font-family:var(--serif);font-size:44px;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;margin:18px 0 6px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 8px 10px 0;border-top:1px solid var(--on-line);font-weight:400;vertical-align:top}
+thead th{border-top:0;font-size:13px;color:var(--on-soft)}
+td.n{font-family:var(--serif);font-size:19px;color:var(--accent);white-space:nowrap}
+.callout{margin:26px 0 0;font-family:var(--serif);font-style:italic;font-size:21px;line-height:1.35;color:var(--accent)}
 
-table{width:100%;border-collapse:collapse;margin:1rem 0;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:.625rem .5rem .625rem 0;border-top:1px solid var(--line-soft);font-weight:400;vertical-align:top}
-thead th{border-top:0;color:var(--ink-soft);font-size:.875rem}
-td.n{font-family:var(--serif);font-size:1.125rem;color:var(--accent);white-space:nowrap}
-
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:9;padding:.875rem 1.25rem calc(env(safe-area-inset-bottom) + 1rem);background:var(--bg);transition:background-color .7s ease}
-.dock::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:1.5rem;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none}
-.dock:empty{display:none}
-.dock>div{max-width:30rem;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:.75rem}
-.btn{appearance:none;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-family:var(--sans);font-weight:600;font-size:1rem;line-height:1.2;padding:.875rem 1.5rem;min-height:3.25rem;border-radius:999px;cursor:pointer;flex:1}
-.btn:disabled{opacity:.3;cursor:default}
-.btn.ghost{flex:0 0 auto;background:none;border-color:transparent;color:var(--ink-soft);font-weight:500;padding-left:.5rem}
-.btn.line{flex:0 0 auto;background:none;border-color:var(--line);color:var(--ink);font-weight:500}
-.btn:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.link{background:none;border:0;padding:0;font:inherit;font-size:.875rem;color:var(--ink-soft);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.link:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-.foot{display:flex;gap:1.5rem;margin-top:2rem}
-
+.deal .qcard,.deal .tally{animation:dealIn .38s cubic-bezier(.2,.7,.2,1) both}
+.deal .deck::before,.deal .deck::after{animation:fadeIn .38s ease both}
+.deal .hand{animation:rise .38s .08s cubic-bezier(.2,.7,.2,1) both}
+.fade{animation:fadeIn .25s ease both}
+@keyframes dealIn{from{opacity:0;transform:translateX(28px) rotate(1.5deg)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{from{opacity:0;transform:scale(.4)}to{opacity:1;transform:none}}
+@media (max-height:720px){
+  .screen{padding-top:calc(env(safe-area-inset-top) + 22px)}
+  .qcard{padding:16px 20px 20px}
+  .qtext{font-size:23px;margin-top:10px}.qtext.l{font-size:20px}
+  .hand{padding-top:12px}
+  .step{margin-bottom:8px}
+  .acard{min-height:54px;padding:10px 14px 10px 18px;font-size:19px}
+  .tok{width:32px;height:32px}
+  .oder{padding:3px 0}
+  .legend{margin-top:8px}
+  .cap{margin-top:6px}
+  .ask{font-size:17px}
+  #go{margin-top:10px!important}
+  .foot{min-height:40px;padding-top:2px}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<div class="progress" id="bar"></div>
-<main class="wrap" id="app"></main>
-<div class="dock" id="dock"></div>
+<div class="progress" id="bar" aria-hidden="true"></div>
+<main id="app"></main>
 
-<!-- Bereich 2: der Decoder bleibt eine eigene Datei und liegt im selben Ordner. -->
+<!-- Bereich 2: Decoder als eigene Datei im selben Ordner -->
 <script src="decoder.js"></script>
 
 <script id="kern">
-/* ===== Kern der Auswertung (Bereich 3). Kein DOM, damit roundtrip-auswertung.js ihn unter Node prüfen kann.
-   Der Gruppenbericht ruft später dieselben Funktionen für fünf Einschätzer auf. ===== */
+/* ===== Kern der Auswertung (Bereich 3). Kein DOM, damit roundtrip-auswertung.js ihn unter Node prüfen kann. ===== */
 (function(root){
 "use strict";
-var VERSION="v1.3", K_INDEX=22;
-var BLOCKNAMEN=["Alltag","Verhalten unter Druck","Nähe und Rückzug","Metaphysik"];
-
-/* Kopie der Texte aus index.html v1.3. Quelle bleibt Bereich 1; roundtrip-auswertung.js prüft die Gleichheit. */
+var VERSION="v1.4";
+var BLOCKNAMEN=["Alltag","Unter Druck","Nähe und Rückzug","Das große Ganze"];
+/* Kopie der Texte aus index.html v1.4. Der Round-Trip prüft die Gleichheit. */
 var ITEMS=[
- {b:1,q:"Sprachnachricht, zweieinhalb Minuten.",a:"Sofort anhören",z:"Zwei Tage später"},
- {b:1,q:"Ein Buch nervt nach 50 Seiten.",a:"Durchziehen",z:"Weglegen"},
- {b:1,q:"Der Zug fällt aus, alle stehen auf dem Bahnsteig.",a:"Sofort das Handy raus",z:"Erst mal hinsetzen"},
- {b:1,q:"Eine Serie mit acht Folgen.",a:"An einem Abend",z:"Über Wochen"},
- {b:1,q:"Ein neues Gerät.",a:"Anleitung lesen",z:"Draufloswerkeln und hinterher googeln"},
- {b:1,q:"Nachricht gelesen, seit drei Tagen keine Antwort.",a:"Nachfragen",z:"Abwarten"},
- {b:1,q:"Etwas geht kaputt.",a:"Selbst reparieren",z:"Ersetzen"},
- {b:1,q:"Eine unbekannte Nummer ruft an.",a:"Rangehen",z:"Klingeln lassen und googeln"},
- {b:2,q:"Im Streit.",a:"Alles sagen",z:"Etwas zurückhalten"},
- {b:2,q:"Kritik.",a:"Prallt ab und nagt nachts",z:"Trifft sofort und ist morgen weg"},
- {b:2,q:"Eine schlechte Nachricht.",a:"Still werden",z:"Aktiv werden"},
- {b:2,q:"Jemand drängelt sich an der Kasse vor.",a:"Ansprechen",z:"Schlucken und zu Hause davon erzählen"},
- {b:2,q:"Nach einem Streit.",a:"Als Erster melden",z:"Aussitzen"},
- {b:2,q:"Dieselbe Geschichte zum vierten Mal.",a:"Durchlassen",z:"Sagen"},
- {b:2,q:"Jemand weint.",a:"Trösten",z:"Abwarten"},
- {b:2,q:"Man lag falsch.",a:"Zugeben und Thema beenden",z:"Erklären, wie es dazu kam"},
- {b:3,q:"Zwei Wochen.",a:"Allein in einer Hütte ohne Empfang",z:"Mit acht Leuten in einem Haus"},
- {b:3,q:"Freitag, 19 Uhr. Die Verabredung sagt ab.",a:"Erleichterung",z:"Enttäuschung"},
- {b:3,q:"Abschied auf Feiern.",a:"Mit Ansage",z:"Spurlos"},
- {b:3,q:"Ein schlechter Tag.",a:"Jemanden anrufen",z:"Allein durch"},
- {b:3,q:"Um Hilfe bitten.",a:"Fällt leicht",z:"Kostet Überwindung"},
- {b:3,q:"Lieber …",a:"Gebraucht werden",z:"Gemocht werden"},
- {b:3,k:true,q:"Nach einer hitzigen Diskussion denkt man eher …",a:"Hätte weniger sagen sollen",z:"Hätte mehr sagen sollen"},
- {b:3,q:"Auf einer Feier.",a:"Leute zusammenbringen",z:"Ein langes Gespräch in der Küche"},
- {b:3,q:"Ein Wochenende ohne Pläne.",a:"Glücksfall",z:"Unruhe"},
- {b:3,q:"Lieber jemand …",a:"auf den Verlass ist",z:"der zum Lachen bringt"},
- {b:3,q:"Lieber bereuen …",a:"was man getan hat",z:"was man gelassen hat"},
- {b:4,q:"Wir sind …",a:"ein Körper, der denkt",z:"etwas, das gerade einen Körper bewohnt"},
- {b:4,q:"Dinge passieren …",a:"einfach so",z:"aus einem Grund"},
- {b:4,q:"Ein Beweis, dass es nach dem Tod weitergeht.",a:"Erleichterung",z:"Beunruhigung"},
- {b:4,q:"Unbegrenzt Zeit haben.",a:"Geschenk",z:"Fluch"},
- {b:4,q:"Der eigene Tod ist …",a:"das Ende von allem",z:"das Ende von etwas"},
+ {b:1,q:"Eine Sprachnachricht von zweieinhalb Minuten kommt an, nichts Dringendes.",a:"Gleich anhören",z:"Aufheben, bis Ruhe ist"},
+ {b:1,q:"Ein Buch packt einen nach 50 Seiten noch nicht richtig.",a:"Trotzdem zu Ende lesen",z:"Weglegen und etwas anderes anfangen"},
+ {b:1,q:"Ein Plan platzt kurzfristig, zum Beispiel fällt der Zug aus oder das Restaurant hat zu.",a:"Sofort nach einer Lösung suchen",z:"Erst mal durchatmen, dann schauen"},
+ {b:1,q:"Eine Serie, die einen richtig packt.",a:"So viele Folgen wie möglich am Stück",z:"Sich die Folgen einteilen"},
+ {b:1,q:"Ein neues Gerät liegt auf dem Tisch.",a:"Erst die Anleitung lesen",z:"Einfach ausprobieren"},
+ {b:1,q:"Eine eigene Nachricht wurde gelesen, aber seit drei Tagen kommt keine Antwort.",a:"Nachhaken",z:"Abwarten, das kommt schon"},
+ {b:1,q:"Etwas, an dem man hängt, geht kaputt.",a:"Versuchen, es zu retten",z:"Loslassen und ersetzen"},
+ {b:1,q:"Eine unbekannte Nummer ruft an.",a:"Rangehen",z:"Klingeln lassen"},
+ {b:2,q:"Ein Streit, in dem es um etwas geht.",a:"Alles aussprechen, was stört",z:"Bewusst etwas für sich behalten"},
+ {b:2,q:"Eine Kritik trifft.",a:"Man sieht es sofort",z:"Es arbeitet eher still im Nachhinein"},
+ {b:2,q:"Eine schlechte Nachricht kommt.",a:"Erst mal für sich sein",z:"Sofort etwas unternehmen"},
+ {b:2,q:"Jemand drängelt sich an der Kasse vor.",a:"Es ansprechen",z:"Es gut sein lassen"},
+ {b:2,q:"Nach einem Streit, der noch in der Luft hängt.",a:"Auf den anderen zugehen",z:"Erst Abstand brauchen"},
+ {b:2,q:"Jemand erzählt zum vierten Mal dieselbe Geschichte.",a:"Zuhören, als wäre sie neu",z:"Freundlich sagen, dass man sie kennt"},
+ {b:2,q:"Jemand in der Nähe fängt an zu weinen.",a:"Hingehen und trösten",z:"Erst einen Moment Raum lassen"},
+ {b:2,q:"Man merkt, dass man falsch lag.",a:"Kurz zugeben, fertig",z:"Erklären, wie es dazu kam"},
+ {b:3,q:"Zwei Wochen, nur eine Wahl.",a:"Allein in einer Hütte ohne Empfang",z:"Mit acht Menschen in einem Haus"},
+ {b:3,q:"Freitag, 19 Uhr. Eine Verabredung mit Freunden sagt kurzfristig ab.",a:"Erleichterung",z:"Enttäuschung"},
+ {b:3,q:"Man will früher von einer Feier gehen.",a:"Sich von allen verabschieden",z:"Leise verschwinden"},
+ {b:3,q:"Ein richtig schlechter Tag.",a:"Mit jemandem darüber reden",z:"Es erst mal mit sich ausmachen"},
+ {b:3,q:"Um Hilfe bitten.",a:"Fällt eher leicht",z:"Kostet Überwindung"},
+ {b:3,q:"Was wäre einem wichtiger?",a:"Gebraucht werden",z:"Gemocht werden"},
+ {b:3,q:"Nach einer hitzigen Diskussion denkt man hinterher eher:",a:"Ich hätte weniger sagen sollen",z:"Ich hätte mehr sagen sollen"},
+ {b:3,q:"Auf einer Feier.",a:"Leute miteinander bekannt machen",z:"Ein langes Gespräch zu zweit in einer ruhigen Ecke"},
+ {b:3,q:"Ein Wochenende ganz ohne Pläne.",a:"Herrlich, endlich nichts",z:"Lieber schnell etwas vornehmen"},
+ {b:3,q:"Was wäre man für andere lieber?",a:"Jemand, auf den man sich verlassen kann",z:"Jemand, der sie zum Lachen bringt"},
+ {b:3,q:"Was würde man lieber bereuen?",a:"Was man getan hat",z:"Was man gelassen hat"},
+ {b:4,q:"Wie fühlt sich das eigene Ich an?",a:"Wie ein Körper, der denkt",z:"Wie etwas, das in einem Körper wohnt"},
+ {b:4,q:"Wenn etwas Großes passiert, gut oder schlecht.",a:"Das war Zufall",z:"Darin steckt ein Sinn"},
+ {b:4,q:"Angenommen, es gäbe einen Beweis, dass es nach dem Tod weitergeht.",a:"Erleichterung",z:"Beunruhigung"},
+ {b:4,q:"Man könnte so lange leben, wie man will.",a:"Ein Geschenk",z:"Eine Last"},
+ {b:4,q:"Können sich Menschen im Kern ändern?",a:"Ja, wirklich",z:"Im Kern bleiben sie, wie sie sind"},
  {b:4,q:"Was wäre die unheimlichere Antwort?",a:"Wir sind allein im Universum",z:"Wir sind es nicht"}
 ];
 var GEDANKEN=[
  {q:"Das Leben stellt sich als Traum heraus.",a:"Aufwachen",z:"Weiterträumen"},
  {q:"Eine Pille sorgt dafür, dass man mit seinem Leben zufrieden ist. Es ändert sich nichts außer dem Gefühl.",a:"Nehmen",z:"Nicht nehmen"},
- {q:"Was hättest du lieber?",a:"Denselben guten Tag hundertmal",z:"Hundert verschiedene, von denen die Hälfte mies ist"},
- {q:"Alles noch mal von vorn, mit dem, was du heute weißt — aber nichts wäre je wieder zum ersten Mal.",a:"Ja",z:"Nein"},
- {q:"Was hättest du lieber?",a:"Die eigene Zukunft kennen",z:"Eine Sache in der Vergangenheit korrigieren können"},
+ {q:"Was hätte man lieber?",a:"Denselben guten Tag hundertmal",z:"Hundert verschiedene, von denen die Hälfte mies ist"},
+ {q:"Alles noch einmal von vorn, mit allem, was man heute weiß. Aber nichts wäre je wieder zum ersten Mal.",a:"Ja, noch einmal",z:"Nein, lieber nicht"},
+ {q:"Was hätte man lieber?",a:"Die eigene Zukunft kennen",z:"Eine Sache in der Vergangenheit korrigieren können"},
  {q:"Man darf ein einziges Mal wählen.",a:"Jemanden ganz verstehen",z:"Von jemandem ganz verstanden werden"},
- {q:"Ein Fehler, den garantiert nie jemand bemerken wird.",a:"Beichten",z:"Für immer schweigen"},
- {q:"Was hättest du lieber?",a:"Das Traumhaus, das außer dir nie jemand betritt",z:"Ein ganz normales, in dem ständig Leute sind"}
+ {q:"Ein Fehler, den garantiert nie jemand bemerkt und der niemandem schadet.",a:"Trotzdem ansprechen",z:"Ruhen lassen"},
+ {q:"Was hätte man lieber?",a:"Ein ganzes Leben an einem einzigen Ort",z:"Nie länger als ein Jahr an einem Ort"}
 ];
+var N=ITEMS.length, NG=GEDANKEN.length;
 
 /* Namen tolerant vergleichen: „Anna “, „anna“ und „Anna“ sind dieselbe Person. */
 function norm(s){return String(s==null?"":s).trim().replace(/\s+/g," ").toLocaleLowerCase("de");}
-
-/* Codes aus beliebigem Text fischen, z. B. aus mehreren kopierten WhatsApp-Nachrichten. */
-function extrahiere(text){return String(text).match(/PT13\.[SF]\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
-
-/* Liest Codes ein. Gleiche Rolle (Gruppe, Typ, von, über) doppelt: der letzte gewinnt. */
-function lies(codes,decode){
-  var gut=[],fehler=[],pos={};
-  codes.forEach(function(code){
-    try{
-      var d=decode(code),key=norm(d.group)+"|"+d.type+"|"+norm(d.name)+"|"+norm(d.target);
-      var e={code:code,data:d,key:key};
-      if(key in pos)gut[pos[key]]=e;else{pos[key]=gut.length;gut.push(e);}
-    }catch(err){fehler.push({code:code,error:err.message});}
-  });
-  return {gut:gut,fehler:fehler};
+/* Doppelte Codes derselben Person: der letzte gewinnt. */
+function sammle(list){
+  var map={},order=[];
+  list.forEach(function(d){var k=norm(d.name)+">"+norm(d.partner);if(!(k in map))order.push(k);map[k]=d;});
+  return order.map(function(k){return map[k];});
 }
-
-/* Sucht das Paar mit den meisten passenden Codes (höchstens vier). Bei Gleichstand gewinnt das Paar mit dem eigenen Namen. */
-function findePaar(gut,eigenerName){
-  var gruppen={};
-  gut.forEach(function(e){
-    var d=e.data,g=norm(d.group);
-    var G=gruppen[g]||(gruppen[g]={name:d.group,personen:{},S:{},F:{}});
-    function person(n){var k=norm(n);if(k&&!G.personen[k])G.personen[k]=n;return k;}
-    var n=person(d.name);
-    if(d.type==="self")G.S[n]=e;else G.F[n+">"+person(d.target)]=e;
-  });
-  var best=null,ich=norm(eigenerName);
-  Object.keys(gruppen).forEach(function(g){
-    var G=gruppen[g],ks=Object.keys(G.personen);
-    if(ks.length===1)ks.push(null);
-    for(var i=0;i<ks.length;i++)for(var j=i+1;j<ks.length;j++){
-      var a=ks[i],b=ks[j];
-      var p={gruppe:G.name,
-        a:{name:G.personen[a],selbst:G.S[a]||null,tipp:(b&&G.F[a+">"+b])||null},
-        b:{name:b?G.personen[b]:null,selbst:(b&&G.S[b])||null,tipp:(b&&G.F[b+">"+a])||null}};
-      p.teile=[p.a.selbst,p.a.tipp,p.b.selbst,p.b.tipp].filter(Boolean);
-      p.punkte=p.teile.length*2+((ich&&(a===ich||b===ich))?1:0);
-      if(!best||p.punkte>best.punkte)best=p;
+/* Zwei Codes passen zusammen, wenn Name und Partner über Kreuz stimmen. Person a ist, wenn möglich, „ich“. */
+function findePaar(list,ich){
+  var best=null,me=norm(ich);
+  for(var i=0;i<list.length;i++)for(var j=0;j<list.length;j++){
+    if(i===j)continue;var a=list[i],b=list[j];
+    if(norm(a.name)===norm(b.partner)&&norm(a.partner)===norm(b.name)){
+      var score=(me&&norm(a.name)===me)?2:(i<j?1:0);
+      if(!best||score>best.score)best={a:a,b:b,score:score};
     }
-  });
-  if(best)best.unbenutzt=gut.filter(function(e){return best.teile.indexOf(e)<0;});
-  return best;
+  }
+  return best?{a:best.a,b:best.b}:null;
 }
-
-/* Selbstbild gegen Tipp. „Kann ich nicht beurteilen“ zählt weder als Treffer noch als Fehler. K zählt nie mit. */
-function vergleiche(selbst,fremd){
-  var items=[],bloecke=BLOCKNAMEN.map(function(n,i){return {block:i+1,name:n,treffer:0,gezaehlt:0,offen:0};});
-  for(var i=0;i<ITEMS.length;i++){
-    var s=selbst.items[i],f=fremd.items[i],offen=!!f.skipped||f.value===null;
-    var it={index:i,block:ITEMS[i].b,control:!!ITEMS[i].k,selbst:s.value,tipp:offen?null:f.value,
-      offen:offen,unsicher:!!f.unsure,treffer:offen?null:f.value===s.value};
+/* Selbstbild der einen Person gegen den Tipp der anderen. „Kann ich nicht beurteilen“ zählt weder als Treffer noch als Fehler. */
+function vergleiche(ueber,tipper){
+  var items=[],bloecke=BLOCKNAMEN.map(function(n,k){return {block:k+1,name:n,treffer:0,gezaehlt:0,offen:0};});
+  for(var i=0;i<N;i++){
+    var s=ueber.self.items[i].value,f=tipper.other.items[i],offen=!!f.skipped||f.value===null;
+    var it={index:i,block:ITEMS[i].b,selbst:s,tipp:offen?null:f.value,offen:offen,unsicher:!offen&&!!f.unsure,treffer:offen?null:f.value===s};
     items.push(it);
-    if(it.control)continue;
     var B=bloecke[it.block-1];
     if(offen)B.offen++;else{B.gezaehlt++;if(it.treffer)B.treffer++;}
   }
   return {items:items,bloecke:bloecke};
 }
-
-/* Wo antworten beide über sich selbst gleich? Ohne K. */
-function gleichheit(sA,sB){
-  var bloecke=BLOCKNAMEN.map(function(n,i){return {block:i+1,name:n,gleich:0,gesamt:0,verschieden:[]};});
-  for(var i=0;i<ITEMS.length;i++){
-    if(ITEMS[i].k)continue;
-    var B=bloecke[ITEMS[i].b-1];B.gesamt++;
-    if(sA.items[i].value===sB.items[i].value)B.gleich++;else B.verschieden.push(i);
-  }
-  return bloecke;
+function gleichheit(A,B){
+  var bl=BLOCKNAMEN.map(function(n,k){return {block:k+1,name:n,gleich:0,gesamt:0,verschieden:[]};});
+  for(var i=0;i<N;i++){var X=bl[ITEMS[i].b-1];X.gesamt++;if(A.self.items[i].value===B.self.items[i].value)X.gleich++;else X.verschieden.push(i);}
+  return bl;
 }
-
-/* Projektionsrate, gleiche Rechnung wie projectionRate() in index.html: Tipp gleich eigene Selbstantwort, ohne K und ohne Offene. */
-function projektion(selbstDesTippers,fremd){
+/* Projektionsrate wie in index.html: Tipp gleich eigene Antwort, ohne Offene. */
+function projektion(D){
   var same=0,tot=0;
-  for(var i=0;i<ITEMS.length;i++){
-    if(ITEMS[i].k)continue;
-    var f=fremd.items[i];
-    if(f.skipped||f.value===null)continue;
-    tot++;if(f.value===selbstDesTippers.items[i].value)same++;
-  }
+  for(var i=0;i<N;i++){var f=D.other.items[i];if(f.skipped||f.value===null)continue;tot++;if(f.value===D.self.items[i].value)same++;}
   return tot?{gleich:same,gesamt:tot,prozent:Math.round(same/tot*100)}:null;
 }
-
 function highlights(v){
   var h={sicherDaneben:[],unsicherRichtig:[]};
-  v.items.forEach(function(it){
-    if(it.control||it.offen)return;
-    if(!it.unsicher&&!it.treffer)h.sicherDaneben.push(it.index);
-    if(it.unsicher&&it.treffer)h.unsicherRichtig.push(it.index);
-  });
+  v.items.forEach(function(it){if(it.offen)return;if(!it.unsicher&&!it.treffer)h.sicherDaneben.push(it.index);if(it.unsicher&&it.treffer)h.unsicherRichtig.push(it.index);});
   return h;
 }
-function beideDaneben(v1,v2){
-  var out=[];
-  for(var i=0;i<ITEMS.length;i++){
-    if(ITEMS[i].k)continue;
-    if(v1.items[i].treffer===false&&v2.items[i].treffer===false)out.push(i);
-  }
-  return out;
+function beideDaneben(v1,v2){var o=[];for(var i=0;i<N;i++)if(v1.items[i].treffer===false&&v2.items[i].treffer===false)o.push(i);return o;}
+/* Kürzel für die Chips: erster Buchstabe, bei gleichem Anfang die ersten zwei. */
+function kuerzel(a,b){
+  function up(s,n){return Array.from(String(s).trim()).slice(0,n).join("").toLocaleUpperCase("de");}
+  var x=up(a,1),y=up(b,1);
+  if(x!==y)return [x,y];
+  x=up(a,2);y=up(b,2);
+  return x!==y?[x,y]:[up(a,1)+"1",up(b,1)+"2"];
 }
+function text(item,v){return v===0?item.a:v===1?item.z:"";}
 
-/* Qualitätsprüfung für den Gruppenbericht. Im Paar-Modus nicht angezeigt.
-   Annahme: „Alles sagen“ (Item 9) passt zu „Hätte weniger sagen sollen“ (K), „Etwas zurückhalten“ zu „mehr“.
-   Straight-Lining über die Position ist aus dem Code nicht erkennbar, weil die Optionsreihenfolge
-   pro Bildschirm zufällig ist und nicht gespeichert wird. */
-function qualitaet(d){
-  var i9=d.items[8],k=d.items[K_INDEX],schnell=0,n=0;
-  d.items.forEach(function(it){n++;if(it.time===0)schnell++;});
-  return {
-    kPasst:(i9.value===null||k.value===null)?null:i9.value===k.value,
-    anteilUnterZweiSekunden:n?schnell/n:0
-  };
-}
-
-function text(item,v){return v===0?item.a:v===1?item.z:null;}
-
-root.AUSW={VERSION:VERSION,K_INDEX:K_INDEX,BLOCKNAMEN:BLOCKNAMEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,
-  norm:norm,extrahiere:extrahiere,lies:lies,findePaar:findePaar,vergleiche:vergleiche,gleichheit:gleichheit,
-  projektion:projektion,highlights:highlights,beideDaneben:beideDaneben,qualitaet:qualitaet,text:text};
+root.AUSW={VERSION:VERSION,BLOCKNAMEN:BLOCKNAMEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,N:N,NG:NG,norm:norm,sammle:sammle,findePaar:findePaar,
+  vergleiche:vergleiche,gleichheit:gleichheit,projektion:projektion,highlights:highlights,beideDaneben:beideDaneben,kuerzel:kuerzel,text:text};
 })(typeof window!=="undefined"?window:this);
 </script>
 
 <script>
-/* ===== Oberfläche: Paar-Modus ===== */
+/* ===== Oberfläche: gemeinsam aufdecken ===== */
 "use strict";
 (function(){
-var A=window.AUSW, STORE="pt13-paar", APP_STORE="pt-v13";
+var A=window.AUSW, D=window.PT14, N=A.N, NG=A.NG, STORE="pt14-auswertung", APP_STORE="pt-v14";
 var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 var P=load(), M=null, lastKey=null, meldung="";
 
-function load(){try{var o=JSON.parse(localStorage.getItem(STORE)||"null");if(o&&Array.isArray(o.codes))return {codes:o.codes,auf:o.auf||{},pos:o.pos||0};}catch(e){}return {codes:[],auf:{},pos:0};}
+function load(){try{var o=JSON.parse(localStorage.getItem(STORE)||"null");if(o&&Array.isArray(o.codes))return {codes:o.codes,pos:o.pos||0,rev:o.rev||{}};}catch(e){}return {codes:[],pos:0,rev:{}};}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(P));}catch(e){}}
-function app(){return document.getElementById("app");}
-function setDock(h){document.getElementById("dock").innerHTML=h;}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
-function dock(back,next,dis){
-  return '<div>'+(back?'<button class="btn ghost" id="back">'+back+'</button>':'<span></span>')+
-    (next?'<button class="btn" id="next"'+(dis?" disabled":"")+'>'+next+'</button>':'')+'</div>';
-}
+function app(){return document.getElementById("app");}
+function $(id){return document.getElementById(id);}
 
-/* Eigene Codes liegen schon auf diesem Handy, wenn hier auch ausgefüllt wurde. Nur lesen, nie schreiben. */
+/* Eigener Code liegt im Speicher der Test-App, wenn auf diesem Handy gespielt wurde. Nur lesen. */
 function eigene(){
-  try{var o=JSON.parse(localStorage.getItem(APP_STORE)||"null");
-    if(o&&o.codes)return {name:o.name||"",codes:Object.keys(o.codes).map(function(k){return o.codes[k];})};
-  }catch(e){}
-  return {name:"",codes:[]};
+  try{var o=JSON.parse(localStorage.getItem(APP_STORE)||"null");if(o)return {name:o.me||"",partner:o.partner||"",code:o.code||null,started:!!o.me};}catch(e){}
+  return {name:"",partner:"",code:null,started:false};
 }
-
-/* Modell aus allen bekannten Codes neu aufbauen */
 function build(){
-  var own=eigene(), alle=own.codes.concat(P.codes), seen={}, uniq=[];
-  alle.forEach(function(c){if(!seen[c]){seen[c]=1;uniq.push(c);}});
-  var r=A.lies(uniq,window.PT13.decode), paar=A.findePaar(r.gut,own.name);
-  var m={own:own,fehler:r.fehler,paar:paar,rich:[],screens:["start"]};
+  var own=eigene(), alle=(own.code?[own.code]:[]).concat(P.codes), decoded=[], fehler=[];
+  alle.forEach(function(c){try{decoded.push(D.decode(c));}catch(e){fehler.push(e.message);}});
+  var list=A.sammle(decoded), paar=A.findePaar(list,own.name), m={own:own,fehler:fehler,list:list,paar:paar,screens:["start"]};
   if(paar){
-    /* Richtung: „über“ ist die Person, deren Selbstbild gilt; „tipper“ hat sie eingeschätzt. */
-    [[paar.a,paar.b],[paar.b,paar.a]].forEach(function(x){
-      var ueber=x[0],tipper=x[1];
-      if(ueber.selbst&&tipper.tipp){
-        var v=A.vergleiche(ueber.selbst.data,tipper.tipp.data);
-        m.rich.push({ueber:ueber.name,tipper:tipper.name,v:v,h:A.highlights(v),
-          proj:tipper.selbst?A.projektion(tipper.selbst.data,tipper.tipp.data):null});
-      }
-    });
-    m.beide=(paar.a.selbst&&paar.b.selbst);
-    if(m.rich.length)m.screens.push("b1","b2","b3","b4","highlights");
-    if(paar.a.selbst||paar.b.selbst)m.screens.push("gedanken");
-    if(m.rich.length)m.screens.push("ende");
+    m.vA=A.vergleiche(paar.a,paar.b);m.vB=A.vergleiche(paar.b,paar.a);
+    m.k=A.kuerzel(paar.a.name,paar.b.name);
+    for(var b=1;b<=4;b++){A.ITEMS.forEach(function(it,i){if(it.b===b)m.screens.push("i"+i);});m.screens.push("t"+b);}
+    m.screens.push("hl");
+    for(var j=0;j<NG;j++)m.screens.push("g"+j);
+    m.screens.push("ende");
   }
   if(P.pos>=m.screens.length)P.pos=0;
   return m;
 }
-
-function frame(key,night){
-  if(key!==lastKey){lastKey=key;window.scrollTo(0,0);
-    if(!RM){var a=app();a.classList.remove("in");void a.offsetWidth;a.classList.add("in");}}
+function frame(night,dealt){
+  var k=M.screens[P.pos], a=app();
+  if(k!==lastKey){lastKey=k;window.scrollTo(0,0);a.classList.remove("deal","fade","pop");void a.offsetWidth;if(!RM)a.classList.add(dealt?"deal":"fade");}
   document.body.classList.toggle("night",!!night);
-  var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=night?"#101319":"#201814";
-  bar();
-}
-function blockItems(b){var out=[];A.ITEMS.forEach(function(it,i){if(it.b===b&&!it.k)out.push(i);});return out;}
-function bar(){
-  var p=document.getElementById("bar"),cur=M.screens[P.pos];
-  if(cur==="start"){p.innerHTML="";p.classList.remove("on");return;}
-  var html="";
-  M.screens.slice(1).forEach(function(s,i){
-    var idx=i+1,f=idx<P.pos?1:idx>P.pos?0:1;
-    if(idx===P.pos&&s.charAt(0)==="b"&&s.length===2){var its=blockItems(+s.charAt(1));f=its.filter(function(i){return P.auf["i"+i];}).length/its.length;}
-    if(idx===P.pos&&s==="gedanken")f=A.GEDANKEN.filter(function(g,j){return P.auf["g"+j];}).length/A.GEDANKEN.length;
-    html+='<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';
-  });
-  p.innerHTML=html;p.classList.add("on");
+  var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=night?"#0E1117":"#17110E";
+  var p=$("bar");
+  if(P.pos===0){p.innerHTML="";p.classList.remove("on");}
+  else{
+    var groups=[[],[],[],[],[]];
+    M.screens.forEach(function(s,idx){if(idx===0)return;var g=s.charAt(0)==="i"||s.charAt(0)==="t"?(s.charAt(0)==="t"?+s.charAt(1)-1:A.ITEMS[+s.slice(1)].b-1):4;groups[g].push(idx);});
+    p.innerHTML=groups.map(function(g){var f=g.length?g.filter(function(x){return x<=P.pos;}).length/g.length:0;return '<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';}).join("");
+    p.classList.add("on");
+  }
 }
 function nav(d){P.pos=Math.max(0,Math.min(M.screens.length-1,P.pos+d));save();render();}
-function wireNav(){
-  var b=document.getElementById("back"),n=document.getElementById("next");
-  if(b)b.onclick=function(){nav(-1);};
-  if(n)n.onclick=function(){nav(1);};
-}
-
 function render(){
-  if(!window.PT13||!A){
-    app().innerHTML='<h2>decoder.js fehlt</h2><p class="dim">Die Auswertung braucht die Datei decoder.js im selben Ordner wie diese Seite.</p>';
-    setDock("");return;
-  }
+  if(!D||!A){app().innerHTML='<div class="screen"><h2>decoder.js fehlt</h2><p class="lead" style="margin-top:12px">Die Auswertung braucht die Datei decoder.js im selben Ordner.</p></div>';return;}
   M=build();
   var s=M.screens[P.pos];
   if(s==="start")return start();
-  if(s==="highlights")return hl();
-  if(s==="gedanken")return ged();
+  if(s==="hl")return hl();
   if(s==="ende")return ende();
-  return block(+s.charAt(1));
+  if(s.charAt(0)==="i")return item(+s.slice(1));
+  if(s.charAt(0)==="t")return tally(+s.slice(1));
+  if(s.charAt(0)==="g")return ged(+s.slice(1));
 }
 
-/* ---------- Start: vier Codes ---------- */
+/* ---------- Start: Codes ---------- */
 function start(){
-  frame("start");
-  var p=M.paar, an=p?p.a.name:null, bn=p&&p.b.name?p.b.name:null;
-  function slot(label,e){return '<div class="slot'+(e?" ok":"")+'"><span class="who">'+label+'</span><span class="st">'+(e?"liegt vor":"fehlt noch")+'</span></div>';}
-  var slots;
-  if(!p)slots=slot("Person 1 über sich",0)+slot("Person 1 über Person 2",0)+slot("Person 2 über sich",0)+slot("Person 2 über Person 1",0);
-  else{
-    var B=bn?esc(bn):"die zweite Person";
-    slots=slot(esc(an)+" über sich",p.a.selbst)+slot(esc(an)+" über "+B,p.a.tipp)+
-      slot((bn?esc(bn):"Die zweite Person")+" über sich",p.b.selbst)+slot((bn?esc(bn):"Die zweite Person")+" über "+esc(an),p.b.tipp);
-  }
+  frame(false,false);
+  var p=M.paar, own=M.own, nA=p?p.a.name:(own.name||"dir"), nB=p?p.b.name:(own.partner||"der anderen Person");
+  var hasA=!!p||!!own.code, hasB=!!p;
   var notes=[];
-  if(M.own.codes.length)notes.push("Die Codes, die auf diesem Handy entstanden sind, wurden automatisch geladen.");
-  var warn=[];
-  if(meldung)warn.push(meldung);
-  M.fehler.forEach(function(f){warn.push("Ein Code ist nicht lesbar ("+f.error+"). Vermutlich wurde er nicht vollständig kopiert.");});
-  if(p&&p.unbenutzt.length){
-    warn.push(p.unbenutzt.length+(p.unbenutzt.length===1?" Code passt":" Codes passen")+" nicht zu diesem Paar: "+
-      p.unbenutzt.map(function(e){var d=e.data;return d.name+(d.target?" über "+d.target:" über sich")+" (Gruppe „"+d.group+"“)";}).join(", ")+
-      ". Prüft Gruppenname und Schreibweise der Vornamen.");
-  }
-  var n=p?p.teile.length:0, bereit=M.rich.length>0;
-  var lage=n===4?"Alles da. Es kann losgehen."
-    :bereit?"Eine Richtung ist schon vollständig. Ihr könnt starten oder erst die fehlenden Codes ergänzen."
-    :"Für eine Richtung braucht es zwei Codes: was jemand über sich sagt und was der andere über ihn getippt hat.";
-
-  app().innerHTML='<h1>Entweder<br>oder</h1>'+
-    '<p>Die Auswertung zu zweit. Ein Handy reicht, setzt euch zusammen. Ihr seht Frage für Frage, was der eine über sich sagt und was der andere getippt hat.</p>'+
-    '<div class="callout">Daneben liegen ist kein Zeugnis. Wer sich gut kennt, trifft grob sieben von zehn Fragen. Der Rest ist der interessante Teil.</div>'+
-    '<h2>Eure vier Codes</h2>'+slots+
-    '<p class="hint">'+esc(lage)+(notes.length?" "+esc(notes.join(" ")):"")+'</p>'+
-    '<label for="paste">Codes einfügen</label>'+
-    '<textarea id="paste" placeholder="PT13.…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>'+
-    '<p class="hint">Ganze WhatsApp-Nachrichten gehen auch, alles außer den Codes wird ignoriert. Nichts davon verlässt dieses Handy.</p>'+
-    '<div style="margin-top:1rem"><button class="btn line" id="add">Codes hinzufügen</button></div>'+
-    '<p class="warn" role="alert">'+warn.map(esc).join("<br>")+'</p>'+
-    '<div class="foot"><button class="link" id="reset">Eingefügte Codes und Spielstand löschen</button></div>';
-  setDock(dock(null,P.pos===0&&Object.keys(P.auf).length?"Weiterspielen":"Auswertung starten",!bereit));
+  if(own.started&&!own.code)notes.push('Dein eigener Teil ist auf diesem Handy noch nicht fertig. <a href="index.html" style="color:var(--on)">Zur Test-App</a>');
+  var warn=[];if(meldung)warn.push(esc(meldung));
+  M.fehler.forEach(function(f){warn.push("Ein Code ist nicht lesbar ("+esc(f)+"). Vermutlich wurde er nicht vollständig kopiert.");});
+  var begun=Object.keys(P.rev).length>0;
+  app().innerHTML='<div class="screen">'+
+    '<p class="kicker" style="margin-top:34px">Entweder oder</p><h1>Aufdecken</h1>'+
+    '<p class="lead" style="margin-top:14px">Setzt euch nebeneinander, ein Handy reicht. Bei jeder Karte: erst raten und kurz reden, dann aufdecken.</p>'+
+    '<div style="margin-top:18px">'+
+      '<div class="slot'+(hasA?" ok":"")+'"><span>Code von '+esc(nA)+'</span><span class="st">'+(hasA?"liegt vor":"fehlt noch")+'</span></div>'+
+      '<div class="slot'+(hasB?" ok":"")+'"><span>Code von '+esc(nB)+'</span><span class="st">'+(hasB?"liegt vor":"fehlt noch")+'</span></div>'+
+    '</div>'+
+    (notes.length?'<p class="lead" style="margin-top:12px;font-size:14px">'+notes.join(" ")+'</p>':'')+
+    (hasB?'':'<label for="paste">Code einfügen</label><textarea id="paste" placeholder="PT14.…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>'+
+      '<p class="lead" style="margin-top:8px;font-size:14px">Die ganze WhatsApp-Nachricht geht auch, alles außer dem Code wird ignoriert. Nichts davon verlässt dieses Handy.</p>'+
+      '<button class="btn line" id="add" style="margin-top:12px">Einfügen</button>')+
+    '<p class="warn" role="alert">'+warn.join("<br>")+'</p>'+
+    '<div style="margin-top:auto;padding-top:26px">'+
+      '<button class="btn" id="go"'+(p?"":" disabled")+'>'+(begun?"Weiterspielen":"Los geht’s")+'</button>'+
+      '<div class="links" style="justify-content:center"><button class="link" id="clear">Eingefügte Codes löschen</button>'+(begun?'<button class="link" id="restart">Von vorn beginnen</button>':'')+'</div>'+
+    '</div></div>';
   meldung="";
-  document.getElementById("add").onclick=function(){
-    var found=A.extrahiere(document.getElementById("paste").value);
-    if(!found.length){meldung="Im eingefügten Text steckt kein Code. Ein Code beginnt mit PT13.";render();return;}
-    found.forEach(function(c){if(P.codes.indexOf(c)<0)P.codes.push(c);});
-    save();render();
+  if($("add"))$("add").onclick=function(){
+    var raw=$("paste").value, found=D.findCodes(raw);
+    if(!found.length){meldung=/PT13\./.test(raw)?"Das ist ein Code aus der alten Version. Bitte beide die neue Test-App nutzen.":"Im eingefügten Text steckt kein Code. Ein Code beginnt mit PT14.";render();return;}
+    var added=0;
+    found.forEach(function(c){
+      if(own.code&&c===own.code){meldung="Das ist dein eigener Code. Füge den Code von "+(own.partner||"der anderen Person")+" ein.";return;}
+      if(P.codes.indexOf(c)<0){P.codes.push(c);added++;}
+    });
+    save();M=build();
+    if(added&&!M.paar){
+      var last=null;try{last=D.decode(found[found.length-1]);}catch(e){}
+      if(last)meldung="Dieser Code ist von "+last.name+" für "+last.partner+". Er passt nicht"+(own.name?" zu "+own.name+" und "+own.partner:"")+". Habt ihr die Namen gleich geschrieben?";
+    }
+    render();
   };
-  document.getElementById("reset").onclick=function(){
-    if(confirm("Eingefügte Codes und aufgedeckte Karten löschen? Die Codes in der Test-App bleiben erhalten.")){
-      try{localStorage.removeItem(STORE);}catch(e){}P={codes:[],auf:{},pos:0};render();}
-  };
-  wireNav();
+  $("go").onclick=function(){if(M.paar)nav(1);};
+  $("clear").onclick=function(){if(confirm("Eingefügte Codes und den Spielstand löschen? Der eigene Code in der Test-App bleibt.")){P={codes:[],pos:0,rev:{}};save();render();}};
+  if($("restart"))$("restart").onclick=function(){P.rev={};P.pos=0;save();render();};
 }
 
-/* ---------- Blöcke: raten, tippen, aufdecken ---------- */
-function verdict(r,it){
-  var item=A.ITEMS[it.index];
-  if(it.offen)return '<span class="verdict">'+esc(r.tipper)+' hat hier offen gelassen. <span class="tag">zählt nicht</span></span>';
-  return '<span class="verdict">'+esc(r.tipper)+' tippte: '+esc(A.text(item,it.tipp))+
-    ' <span class="tag '+(it.treffer?"hit":"miss")+'">'+(it.treffer?"Treffer":"daneben")+'</span>'+
-    (it.unsicher?' <span class="tag">war unsicher</span>':"")+'</span>';
+/* ---------- Eine Karte: erst raten, dann zweimal aufdecken ---------- */
+function deckHTML(head,num,q){
+  return '<div class="deck"><div class="qcard"><div class="qhead"><span>'+esc(head)+'</span><span>'+num+'</span></div>'+
+    '<p class="qtext'+(q.length>90?" l":"")+'">'+esc(q)+'</p></div></div>';
 }
-function cardHtml(i){
-  var item=A.ITEMS[i],open=!!P.auf["i"+i];
-  var head='<span class="q">'+esc(item.q)+'</span><span class="ab">'+esc(item.a)+' <em>oder</em> '+esc(item.z)+'</span>';
-  if(!open)return '<button class="card" data-i="'+i+'">'+head+'<span class="tap">Aufdecken</span></button>';
-  return '<div class="card open">'+head+M.rich.map(function(r){
-    var it=r.v.items[i];
-    return '<div class="dir"><span class="says">'+esc(r.ueber)+' sagt über sich: <b>'+esc(A.text(item,it.selbst))+'</b></span>'+verdict(r,it)+'</div>';
-  }).join("")+'</div>';
+function answerCards(item,tokA,tokZ,hitA,hitZ){
+  function card(t,toks,cls,hit){return '<div class="acard '+cls+(hit?" hit":"")+'"><span class="t">'+esc(t)+'</span>'+(toks?'<span class="toks">'+toks+'</span>':'')+'</div>';}
+  return card(item.a,tokA,"a1",hitA)+'<div class="oder" aria-hidden="true">oder</div>'+card(item.z,tokZ,"a2",hitZ);
 }
-function tallyHtml(b){
-  var its=blockItems(b),zu=its.filter(function(i){return !P.auf["i"+i];}).length;
-  if(zu)return '<div class="tally"><p class="dim">Noch '+zu+(zu===1?" Karte":" Karten")+' verdeckt. Die Zählung kommt, wenn alle offen sind.</p></div>';
-  return '<div class="tally">'+M.rich.map(function(r){
-    var B=r.v.bloecke[b-1];
-    return '<p>'+esc(r.tipper)+' über '+esc(r.ueber)+': <span class="n">'+B.treffer+' von '+B.gezaehlt+'</span>'+
-      (B.offen?' <span class="dim">('+B.offen+' offen gelassen)</span>':"")+'</p>';
-  }).join("")+'</div>';
+function tok(kind,letter,label){return '<span class="tok '+kind+'" role="img" aria-label="'+esc(label)+'">'+esc(letter)+'</span>';}
+function item(i){
+  var it=A.ITEMS[i], st=P.rev["i"+i]||0, p=M.paar, names=[p.a.name,p.b.name];
+  frame(false,true);
+  var body="",cap="",ask="",legend="",tA="",tZ="",hA=false,hZ=false;
+  if(st===0){
+    body='<p class="step">Erst raten, dann aufdecken.</p>';
+  }else{
+    var d=st-1, v=d===0?M.vA:M.vB, r=v.items[i], ueber=names[d], tipper=names[1-d], ku=M.k[d], kt=M.k[1-d];
+    var self=tok("solid",ku,ueber+" über sich"), tip=r.offen?"":tok("ring",kt,"Tipp von "+tipper);
+    if(r.selbst===0)tA+=self;else tZ+=self;
+    if(!r.offen){if(r.tipp===0)tA+=tip;else tZ+=tip;}
+    if(r.treffer){if(r.selbst===0)hA=true;else hZ=true;}
+    body='<p class="step">Über '+esc(ueber)+'</p>';
+    if(r.offen)cap=esc(tipper)+" hat hier offen gelassen.";
+    else if(r.treffer){cap="Getroffen."+(r.unsicher?" "+esc(tipper)+" war unsicher und lag trotzdem richtig.":"");if(r.unsicher)ask="Was hat den richtigen Riecher gegeben?";}
+    else if(!r.unsicher){cap="Daneben, obwohl "+esc(tipper)+" sich sicher war.";ask="Woher kam die Sicherheit?";}
+    else cap="Daneben. "+esc(tipper)+" war unsicher.";
+    legend='<p class="legend"><span>'+tok("solid",ku,"")+esc(ueber)+' über sich</span>'+(r.offen?'':'<span>'+tok("ring",kt,"")+'Tipp von '+esc(tipper)+'</span>')+'</p>';
+  }
+  var btn=st===0?"Aufdecken: über "+esc(names[0]):st===1?"Aufdecken: über "+esc(names[1]):"Nächste Karte";
+  app().innerHTML='<div class="screen">'+
+    '<div class="top"><b>'+esc(A.BLOCKNAMEN[it.b-1])+'</b><button class="txt" id="home">Übersicht</button></div>'+
+    deckHTML(A.BLOCKNAMEN[it.b-1],(i+1)+" / "+N,it.q)+
+    '<div class="hand">'+body+answerCards(it,tA,tZ,hA,hZ)+legend+
+      (cap?'<p class="cap" role="status">'+cap+'</p>':'')+(ask?'<p class="ask">'+ask+'</p>':'')+'</div>'+
+    '<button class="btn" id="go" style="margin-top:18px">'+btn+'</button>'+
+    '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
+  if(st>0&&!RM){var a=app();a.classList.remove("deal","fade");void a.offsetWidth;a.classList.add("pop");}
+  $("go").onclick=function(){if(st<2){P.rev["i"+i]=st+1;save();render();}else nav(1);};
+  $("back").onclick=function(){if(st>0){P.rev["i"+i]=st-1;save();render();}else nav(-1);};
+  $("home").onclick=function(){P.pos=0;save();render();};
 }
-function block(b){
-  frame("b"+b);
-  var its=blockItems(b);
-  app().innerHTML='<div class="meta"><b>Block '+b+' von 4</b><span>'+esc(M.paar.a.name)+(M.paar.b.name?" und "+esc(M.paar.b.name):"")+'</span></div>'+
-    '<h2>'+esc(A.BLOCKNAMEN[b-1])+'</h2>'+
-    (b===1?'<p class="dim">Lest die Frage, ratet laut, redet kurz. Dann aufdecken.</p>':"")+
-    '<div id="cards">'+its.map(cardHtml).join("")+'</div>'+
-    '<div id="tally">'+tallyHtml(b)+'</div>'+
-    '<div class="foot"><button class="link" id="all">Alle Karten dieses Blocks aufdecken</button></div>';
-  setDock(dock("Zurück",b<4?"Nächster Block":"Weiter",false));
-  function refresh(){document.getElementById("tally").innerHTML=tallyHtml(b);bar();}
-  document.getElementById("cards").onclick=function(e){
-    var c=e.target.closest?e.target.closest("button.card"):null;if(!c)return;
-    var i=+c.dataset.i;P.auf["i"+i]=1;save();
-    var t=document.createElement("div");t.innerHTML=cardHtml(i);c.parentNode.replaceChild(t.firstChild,c);refresh();
-  };
-  document.getElementById("all").onclick=function(){its.forEach(function(i){P.auf["i"+i]=1;});save();render();};
-  wireNav();
+
+/* ---------- Blockende: Zählung, nie eine Gesamtzahl ---------- */
+function tally(b){
+  frame(false,true);
+  var p=M.paar;
+  function row(v,ueber,tipper){var B=v.bloecke[b-1];return '<p class="who">'+esc(tipper)+' über '+esc(ueber)+'</p><p class="n">'+B.treffer+' von '+B.gezaehlt+'</p>'+(B.offen?'<p class="o">'+B.offen+' offen gelassen</p>':'');}
+  app().innerHTML='<div class="screen">'+
+    '<div class="top"><b>Block '+b+' von 4</b><button class="txt" id="home">Übersicht</button></div>'+
+    '<div class="tally"><div class="qhead"><span>Geschafft</span></div><p class="qtext" style="margin-bottom:4px">'+esc(A.BLOCKNAMEN[b-1])+'</p>'+
+      row(M.vA,p.a.name,p.b.name)+row(M.vB,p.b.name,p.a.name)+'</div>'+
+    '<p class="lead" style="margin-top:22px;padding:0 4px">'+(b===1?"Raten ergäbe die Hälfte. Wer sich gut kennt, trifft grob 65 bis 75 Prozent. Daneben liegen ist kein Zeugnis, sondern der interessante Teil.":b===4?"Das große Ganze sieht man niemandem an. Hier liegen fast alle öfter daneben.":"Wo hat euch etwas überrascht?")+'</p>'+
+    '<button class="btn" id="go" style="margin-top:auto">'+(b<4?"Nächster Block":"Zu euren Highlights")+'</button>'+
+    '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
+  $("go").onclick=function(){nav(1);};
+  $("back").onclick=function(){nav(-1);};
+  $("home").onclick=function(){P.pos=0;save();render();};
 }
 
 /* ---------- Highlights ---------- */
-function liItem(i,detail){return '<li><span class="q">'+esc(A.ITEMS[i].q)+'</span><span class="d">'+detail+'</span></li>';}
+function li(i,d){return '<li><span class="q">'+esc(A.ITEMS[i].q)+'</span><span class="d">'+d+'</span></li>';}
+/* Lange Listen: die ersten vier zeigen, den Rest zum Aufklappen. */
+function ul(items){if(!items.length)return '';var h='<ul class="list">'+items.slice(0,4).join('')+'</ul>';if(items.length>4)h+='<details><summary>Noch '+(items.length-4)+' weitere</summary><ul class="list">'+items.slice(4).join('')+'</ul></details>';return h;}
 function hl(){
-  frame("highlights");
-  var h='<div class="meta"><b>Worüber es sich zu reden lohnt</b></div><h2>Eure Highlights</h2>';
-
-  h+='<h3>Sicher getippt und daneben</h3><p class="dim">Woher kam die Sicherheit? Und passt das Selbstbild, oder sieht der andere etwas, das man selbst nicht sieht?</p>';
-  var any=false,L="";
-  M.rich.forEach(function(r){r.h.sicherDaneben.forEach(function(i){any=true;var it=r.v.items[i],item=A.ITEMS[i];
-    L+=liItem(i,esc(r.tipper)+' war sicher: '+esc(A.text(item,it.tipp))+'. '+esc(r.ueber)+' sagt: '+esc(A.text(item,it.selbst))+'.');});});
-  h+=any?'<ul class="list">'+L+'</ul>':'<p>Keine. Wo ihr euch sicher wart, lagt ihr richtig.</p>';
-
-  h+='<h3>Unsicher getippt und trotzdem getroffen</h3><p class="dim">Was hat euch den richtigen Riecher gegeben?</p>';
-  any=false;L="";
-  M.rich.forEach(function(r){r.h.unsicherRichtig.forEach(function(i){any=true;var it=r.v.items[i];
-    L+=liItem(i,esc(r.tipper)+' lag richtig: '+esc(A.text(A.ITEMS[i],it.selbst))+'.');});});
-  h+=any?'<ul class="list">'+L+'</ul>':'<p>Keine.</p>';
-
-  if(M.rich.length===2){
-    var bd=A.beideDaneben(M.rich[0].v,M.rich[1].v);
-    h+='<h3>Hier lagt ihr beide daneben</h3><p class="dim">Woran könnte das liegen?</p>';
-    h+=bd.length?'<ul class="list">'+bd.map(function(i){return liItem(i,esc(A.ITEMS[i].a)+' oder '+esc(A.ITEMS[i].z));}).join("")+'</ul>':'<p>Keine Frage, bei der ihr beide danebenlagt.</p>';
+  frame(false,false);
+  var p=M.paar, dirs=[{v:M.vA,ueber:p.a.name,tipper:p.b.name,T:p.b},{v:M.vB,ueber:p.b.name,tipper:p.a.name,T:p.a}], h="", L, any;
+  h+='<h3>Sicher getippt und daneben</h3><p class="lead">Woher kam die Sicherheit? Und sieht der andere vielleicht etwas, das man selbst nicht sieht?</p>';
+  L=[];dirs.forEach(function(x){A.highlights(x.v).sicherDaneben.forEach(function(i){var r=x.v.items[i];L.push(li(i,esc(x.tipper)+" war sicher: "+esc(A.text(A.ITEMS[i],r.tipp))+". "+esc(x.ueber)+" sagt: "+esc(A.text(A.ITEMS[i],r.selbst))+"."));});});
+  h+=L.length?ul(L):'<p class="lead" style="margin-top:8px">Keine. Wo ihr euch sicher wart, lagt ihr richtig.</p>';
+  h+='<h3>Unsicher und trotzdem getroffen</h3>';
+  L=[];dirs.forEach(function(x){A.highlights(x.v).unsicherRichtig.forEach(function(i){L.push(li(i,esc(x.tipper)+" lag richtig: "+esc(A.text(A.ITEMS[i],x.v.items[i].selbst))+"."));});});
+  h+=L.length?ul(L):'<p class="lead" style="margin-top:8px">Keine.</p>';
+  var bd=A.beideDaneben(M.vA,M.vB);
+  h+='<h3>Hier lagt ihr beide daneben</h3>';
+  h+=bd.length?ul(bd.map(function(i){return li(i,esc(A.ITEMS[i].a)+" oder "+esc(A.ITEMS[i].z));})):'<p class="lead" style="margin-top:8px">Keine Frage, bei der ihr beide danebenlagt.</p>';
+  var g=A.gleichheit(p.a,p.b);
+  h+='<h3>Wo tickt ihr gleich?</h3><p class="lead">Verglichen wird, was jeder über sich selbst gesagt hat.</p><ul class="list">'+g.map(function(B){
+    return '<li><span class="q">'+esc(B.name)+'</span><span class="d">Bei '+B.gleich+' von '+B.gesamt+' Fragen gleich.</span>'+
+      (B.verschieden.length?'<details><summary>Hier verschieden</summary><ul class="list">'+B.verschieden.map(function(i){
+        return li(i,esc(p.a.name)+": "+esc(A.text(A.ITEMS[i],p.a.self.items[i].value))+". "+esc(p.b.name)+": "+esc(A.text(A.ITEMS[i],p.b.self.items[i].value))+".");}).join("")+'</ul></details>':'')+'</li>';
+  }).join("")+'</ul>';
+  var pa=A.projektion(p.a), pb=A.projektion(p.b);
+  if(pa||pb){
+    h+='<h3>Wie viel von dir steckt in deinem Tipp?</h3><div class="stats">'+[[p.a,pa],[p.b,pb]].map(function(x){return x[1]?'<div><p class="big">'+x[1].prozent+'%</p><p class="lead" style="font-size:14px;margin-top:4px">'+esc(x[0].name)+' hat bei '+x[1].gleich+' von '+x[1].gesamt+' Fragen dasselbe getippt wie bei sich selbst.</p></div>':'';}).join("")+'</div>'+
+      '<p class="lead" style="margin-top:12px">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen ein Stück weit sich selbst. Wer sich ähnlich ist, liegt damit oft sogar richtig.</p>';
   }
-
-  if(M.beide){
-    var g=A.gleichheit(M.paar.a.selbst.data,M.paar.b.selbst.data);
-    h+='<h3>Wo tickt ihr gleich, wo verschieden?</h3><p class="dim">Verglichen wird, was jeder über sich selbst gesagt hat.</p><ul class="list">';
-    g.forEach(function(B){
-      h+='<li><span class="q">'+esc(B.name)+'</span><span class="d">Bei '+B.gleich+' von '+B.gesamt+' Fragen gleich.</span>'+
-        (B.verschieden.length?'<details><summary>Hier tickt ihr verschieden</summary><ul class="list">'+B.verschieden.map(function(i){
-          return liItem(i,esc(M.paar.a.name)+': '+esc(A.text(A.ITEMS[i],M.paar.a.selbst.data.items[i].value))+'. '+
-            esc(M.paar.b.name)+': '+esc(A.text(A.ITEMS[i],M.paar.b.selbst.data.items[i].value))+'.');}).join("")+'</ul></details>':"")+'</li>';
-    });
-    h+='</ul>';
-  }
-
-  var pr=M.rich.filter(function(r){return r.proj;});
-  if(pr.length){
-    h+='<h3>Wie viel von dir steckt in deinem Tipp?</h3><div class="stats">'+pr.map(function(r){
-      return '<div><p class="stat">'+r.proj.prozent+'%</p><p class="dim">'+esc(r.tipper)+': bei '+r.proj.gleich+' von '+r.proj.gesamt+' Fragen dasselbe getippt wie bei sich selbst.</p></div>';}).join("")+'</div>'+
-      '<p class="dim">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen anderer ein Stück weit sich selbst. Das passiert jedem, nur unterschiedlich stark. Bei Paaren, die sich ähnlich sind, ist ein hoher Wert außerdem schlicht richtig.</p>';
-  }
-  app().innerHTML=h;
-  setDock(dock("Zurück","Weiter",false));wireNav();
+  app().innerHTML='<div class="screen">'+
+    '<div class="top"><b>Worüber es sich zu reden lohnt</b><button class="txt" id="home">Übersicht</button></div>'+
+    '<h2 style="margin-top:6px">Eure Highlights</h2>'+h+
+    '<button class="btn" id="go" style="margin-top:30px">Zu den Gedankenexperimenten</button>'+
+    '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
+  $("go").onclick=function(){nav(1);};
+  $("back").onclick=function(){nav(-1);};
+  $("home").onclick=function(){P.pos=0;save();render();};
 }
 
-/* ---------- Gedankenexperimente ---------- */
-function gedCard(j){
-  var g=A.GEDANKEN[j],open=!!P.auf["g"+j];
-  var head='<span class="q">'+esc(g.q)+'</span><span class="ab">'+esc(g.a)+' <em>oder</em> '+esc(g.z)+'</span>';
-  if(!open)return '<button class="card" data-j="'+j+'">'+head+'<span class="tap">Aufdecken</span></button>';
-  var pa=M.paar.a,pb=M.paar.b,va=pa.selbst?pa.selbst.data.gedanken[j].value:null,vb=pb.selbst?pb.selbst.data.gedanken[j].value:null;
-  function row(p,v){return p.selbst?'<span class="says">'+esc(p.name)+': <b>'+esc(A.text(g,v))+'</b></span>':"";}
-  return '<div class="card open">'+head+'<div class="dir">'+row(pa,va)+row(pb,vb)+
-    (pa.selbst&&pb.selbst?'<span class="verdict"><span class="tag'+(va===vb?" hit":"")+'">'+(va===vb?"gleich":"verschieden")+'</span></span>':"")+'</div></div>';
-}
-function ged(){
-  frame("gedanken",true);
-  app().innerHTML='<div class="meta"><b>Ohne Tipp, ohne Zählung</b></div><h2>Acht Fragen für das Gespräch danach</h2>'+
-    '<p class="dim">Hier hat niemand geraten. Ihr seht nur, was jeder für sich geantwortet hat.</p>'+
-    '<div id="cards">'+A.GEDANKEN.map(function(g,j){return gedCard(j);}).join("")+'</div>';
-  setDock(dock("Zurück",M.screens[P.pos+1]?"Weiter":null,false));
-  document.getElementById("cards").onclick=function(e){
-    var c=e.target.closest?e.target.closest("button.card"):null;if(!c)return;
-    var j=+c.dataset.j;P.auf["g"+j]=1;save();
-    var t=document.createElement("div");t.innerHTML=gedCard(j);c.parentNode.replaceChild(t.firstChild,c);bar();
-  };
-  wireNav();
+/* ---------- Gedankenexperimente: ohne Tipp, ohne Zählung ---------- */
+function ged(j){
+  var g=A.GEDANKEN[j], st=P.rev["g"+j]||0, p=M.paar;
+  frame(true,true);
+  var tA="",tZ="",cap="";
+  if(st>0){
+    var va=p.a.self.gedanken[j].value, vb=p.b.self.gedanken[j].value;
+    var ta=tok("solid",M.k[0],p.a.name), tb=tok("solid",M.k[1],p.b.name);
+    if(va===0)tA+=ta;else tZ+=ta;
+    if(vb===0)tA+=tb;else tZ+=tb;
+    cap=va===vb?"Gleich gewählt.":"Verschieden gewählt. Erzählt euch, warum.";
+  }
+  app().innerHTML='<div class="screen">'+
+    '<div class="top"><b>Ohne Tipp, ohne Zählung</b><button class="txt" id="home">Übersicht</button></div>'+
+    deckHTML("Gedankenexperiment",(j+1)+" / "+NG,g.q)+
+    '<div class="hand">'+(st===0?'<p class="step">Was hat der andere wohl gewählt?</p>':'')+answerCards(g,tA,tZ,false,false)+
+      (st>0?'<p class="legend"><span>'+tok("solid",M.k[0],"")+esc(p.a.name)+'</span><span>'+tok("solid",M.k[1],"")+esc(p.b.name)+'</span></p><p class="cap" role="status">'+cap+'</p>':'')+'</div>'+
+    '<button class="btn" id="go" style="margin-top:18px">'+(st===0?"Aufdecken":j<NG-1?"Nächste Karte":"Zum Abschluss")+'</button>'+
+    '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
+  if(st>0&&!RM){var a=app();a.classList.remove("deal","fade");void a.offsetWidth;a.classList.add("pop");}
+  $("go").onclick=function(){if(st===0){P.rev["g"+j]=1;save();render();}else nav(1);};
+  $("back").onclick=function(){if(st>0){P.rev["g"+j]=0;save();render();}else nav(-1);};
+  $("home").onclick=function(){P.pos=0;save();render();};
 }
 
-/* ---------- Ende: Zählung pro Block, nie eine Gesamtzahl ---------- */
+/* ---------- Abschluss ---------- */
 function ende(){
-  frame("ende");
-  var h='<div class="meta"><b>Fertig</b></div><h2>Das war’s</h2>'+
-    '<table><thead><tr><th>Block</th>'+M.rich.map(function(r){return '<th>'+esc(r.tipper)+' über '+esc(r.ueber)+'</th>';}).join("")+'</tr></thead><tbody>'+
-    A.BLOCKNAMEN.map(function(n,b){return '<tr><td>'+esc(n)+'</td>'+M.rich.map(function(r){var B=r.v.bloecke[b];return '<td class="n">'+B.treffer+' von '+B.gezaehlt+'</td>';}).join("")+'</tr>';}).join("")+
+  frame(false,false);
+  var p=M.paar;
+  app().innerHTML='<div class="screen">'+
+    '<p class="kicker" style="margin-top:34px">Fertig</p><h2>Das war’s</h2>'+
+    '<table><thead><tr><th>Block</th><th>'+esc(p.b.name)+' über '+esc(p.a.name)+'</th><th>'+esc(p.a.name)+' über '+esc(p.b.name)+'</th></tr></thead><tbody>'+
+    A.BLOCKNAMEN.map(function(n,b){return '<tr><td>'+esc(n)+'</td><td class="n">'+M.vA.bloecke[b].treffer+' von '+M.vA.bloecke[b].gezaehlt+'</td><td class="n">'+M.vB.bloecke[b].treffer+' von '+M.vB.bloecke[b].gezaehlt+'</td></tr>';}).join("")+
     '</tbody></table>'+
-    '<p class="dim">Zur Einordnung: Raten ergäbe die Hälfte. Bei Menschen, die sich gut kennen, sind grob 65 bis 75 Prozent normal. Alltag ist meist am leichtesten, Metaphysik am schwersten, weil man sie niemandem ansieht.</p>'+
-    '<div class="callout">Welche Antwort hat euch am meisten überrascht?</div>';
-  app().innerHTML=h;
-  setDock(dock("Zurück",null,false));wireNav();
+    '<p class="lead">Zur Einordnung: Raten ergäbe die Hälfte. Wer sich gut kennt, trifft grob 65 bis 75 Prozent. Alltag ist meist am leichtesten, das große Ganze am schwersten, weil man es niemandem ansieht.</p>'+
+    '<p class="callout">Welche Antwort hat euch am meisten überrascht?</p>'+
+    '<div style="margin-top:auto;padding-top:28px"><button class="btn line" id="again">Noch einmal durchgehen</button>'+
+    '<div class="links" style="justify-content:center"><button class="link" id="back">Zurück</button><button class="link" id="home">Übersicht</button></div></div></div>';
+  $("again").onclick=function(){P.rev={};P.pos=1;save();render();};
+  $("back").onclick=function(){nav(-1);};
+  $("home").onclick=function(){P.pos=0;save();render();};
 }
+
+document.addEventListener("keydown",function(e){
+  var tg=e.target&&e.target.tagName;
+  if(tg==="INPUT"||tg==="TEXTAREA"||tg==="BUTTON"||tg==="A"||e.metaKey||e.ctrlKey||e.altKey)return;
+  if(e.key==="Enter"||e.key==="ArrowRight"){var g=$("go");if(g&&!g.disabled){e.preventDefault();g.click();}}
+  else if(e.key==="ArrowLeft"){var b=$("back");if(b){e.preventDefault();b.click();}}
+});
 
 render();
 })();
