@@ -161,6 +161,11 @@ td.n{font-family:var(--serif);font-size:19px;color:var(--accent);white-space:now
   .rev .step{margin-bottom:6px}
   .foot{min-height:40px;padding-top:2px}
 }
+.flash{margin:18px 0 0;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--accent)}
+.plab{margin:28px 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
+.pairbtn{appearance:none;display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;min-height:64px;margin-top:10px;padding:14px 18px;border:0;border-radius:16px;background:var(--card);color:var(--card-ink);box-shadow:var(--shadow-s);text-align:left;cursor:pointer}
+.pairbtn .pn{font-family:var(--serif);font-size:21px;line-height:1.2}
+.pairbtn .ps{font-size:14px;font-weight:600;color:var(--card-soft);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -282,64 +287,130 @@ function kuerzel(a,b){
 }
 function text(item,v){return v===0?item.a:v===1?item.z:"";}
 
-root.AUSW={fill:fill,VERSION:VERSION,BLOCKNAMEN:BLOCKNAMEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,N:N,NG:NG,norm:norm,sammle:sammle,findePaar:findePaar,
+/* ---------- Sammlung: beliebig viele Codes, verknüpft über die Namen ---------- */
+function personen(list){var m={};list.forEach(function(d){m[norm(d.name)]=1;});return Object.keys(m).length;}
+/* Paare aus allen Codes. Komplett, wenn beide Richtungen da sind. Mit „ich“ steht die eigene Person vorn. */
+function paare(list,ich){
+  var by={},names={},me=norm(ich),seen={},out=[];
+  list.forEach(function(d){var x=norm(d.name);by[x+">"+norm(d.partner)]=d;names[x]=d.name;});
+  list.forEach(function(d){var y=norm(d.partner);if(!(y in names))names[y]=d.partner;});
+  list.forEach(function(d){
+    var x=norm(d.name),y=norm(d.partner);
+    if(!x||!y||x===y)return;
+    var p=x<y?x:y,q=x<y?y:x,k=p+"|"+q;
+    if(seen[k])return;seen[k]=1;
+    if(q===me){var t=p;p=q;q=t;}
+    out.push({key:k,nameA:names[p],nameB:names[q],a:by[p+">"+q]||null,b:by[q+">"+p]||null});
+  });
+  out.forEach(function(o){o.ready=!!(o.a&&o.b);o.mine=!!me&&(norm(o.nameA)===me||norm(o.nameB)===me);});
+  out.sort(function(u,v){return (v.ready-u.ready)||(v.mine-u.mine)||u.nameA.localeCompare(v.nameA,"de")||u.nameB.localeCompare(v.nameB,"de");});
+  return out;
+}
+/* Gleicher Name, aber verschiedene Antworten über sich: zwei Personen oder Teil 1 neu gemacht. */
+function konflikte(list){
+  var m={},out=[];
+  list.forEach(function(d){
+    var k=norm(d.name),sig=d.self.items.map(function(x){return x.value;}).join("")+"|"+d.self.gedanken.map(function(x){return x.value;}).join("");
+    var e=m[k]||(m[k]={name:d.name,s:{}});e.s[sig]=1;
+  });
+  Object.keys(m).forEach(function(k){if(Object.keys(m[k].s).length>1)out.push(m[k].name);});
+  return out;
+}
+/* Feedback pro Frage über alle Codes. Jede Person zählt über sich einmal (letzter Code), Teil 2 pro Code.
+   Annahme: „fast alle wählen dasselbe“ ab 4 Personen und 85 Prozent. */
+function feedback(list){
+  var per={};list.forEach(function(d){per[norm(d.name)]=d;});
+  var selfs=Object.keys(per).map(function(k){return per[k];});
+  var items=ITEMS.map(function(it,i){
+    var x={i:i,a:0,b:0,selbst:selfs.length,getippt:0,unsicher:0,fremd:list.length,offen:0,lang:0,karten:selfs.length+list.length};
+    selfs.forEach(function(d){var s=d.self.items[i];if(s.value===0)x.a++;else x.b++;if(s.time===3)x.lang++;});
+    list.forEach(function(d){var o=d.other.items[i];if(o.skipped)x.offen++;else{x.getippt++;if(o.unsure)x.unsicher++;}if(o.time===3)x.lang++;});
+    x.mehr=Math.max(x.a,x.b);x.einseitig=x.selbst>=4&&x.mehr/x.selbst>=0.85;
+    x.score=(x.getippt?x.unsicher/x.getippt:0)+(x.fremd?x.offen/x.fremd:0)+(x.karten?x.lang/x.karten:0)+(x.einseitig?0.5:0);
+    return x;
+  });
+  var gedanken=GEDANKEN.map(function(g,j){var x={i:j,a:0,b:0,lang:0};selfs.forEach(function(d){var s=d.self.gedanken[j];if(s.value===0)x.a++;else x.b++;if(s.time===3)x.lang++;});return x;});
+  return {codes:list.length,personen:selfs.length,items:items,gedanken:gedanken};
+}
+
+root.AUSW={fill:fill,personen:personen,paare:paare,konflikte:konflikte,feedback:feedback,VERSION:VERSION,BLOCKNAMEN:BLOCKNAMEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,N:N,NG:NG,norm:norm,sammle:sammle,findePaar:findePaar,
   vergleiche:vergleiche,gleichheit:gleichheit,projektion:projektion,highlights:highlights,beideDaneben:beideDaneben,kuerzel:kuerzel,text:text};
 })(typeof window!=="undefined"?window:this);
 </script>
 
 <script>
-/* ===== Oberfläche: gemeinsam aufdecken ===== */
+/* ===== Oberfläche: Sammlung, gemeinsam aufdecken, Feedback ===== */
 "use strict";
 (function(){
 var A=window.AUSW, D=window.PT15, N=A.N, NG=A.NG, STORE="pt15-auswertung", APP_STORE="pt-v15";
 var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-var P=load(), M=null, lastKey=null, meldung="";
+var P=load(), M=null, lastKey=null, meldung="", erfolg="";
 
-function load(){try{var o=JSON.parse(localStorage.getItem(STORE)||"null");if(o&&Array.isArray(o.codes))return {codes:o.codes,pos:o.pos||0,rev:o.rev||{}};}catch(e){}return {codes:[],pos:0,rev:{}};}
+/* Sammlung: alle eingefügten Codes, gewähltes Paar, Spielstand pro Paar. Ein Stand aus v1.5 wird übernommen. */
+function load(){
+  try{var o=JSON.parse(localStorage.getItem(STORE)||"null");
+    if(o&&Array.isArray(o.codes))return {codes:o.codes,sel:o.sel||null,view:o.view||"start",games:o.games||{}};
+  }catch(e){}
+  return {codes:[],sel:null,view:"start",games:{}};
+}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(P));}catch(e){}}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function app(){return document.getElementById("app");}
 function $(id){return document.getElementById(id);}
+function game(){if(!P.sel)return {pos:0,rev:{}};return P.games[P.sel]||(P.games[P.sel]={pos:1,rev:{}});}
 
-/* Eigener Code liegt im Speicher der Test-App, wenn auf diesem Handy gespielt wurde. Nur lesen. */
+/* Eigene Codes liegen im Speicher der Test-App, wenn auf diesem Handy gespielt wurde. Nur lesen. */
 function eigene(){
-  try{var o=JSON.parse(localStorage.getItem(APP_STORE)||"null");if(o)return {name:o.me||"",partner:o.partner||"",code:o.code||null,started:!!o.me};}catch(e){}
-  return {name:"",partner:"",code:null,started:false};
+  try{var o=JSON.parse(localStorage.getItem(APP_STORE)||"null");
+    if(o){
+      var codes=[];
+      if(Array.isArray(o.people))o.people.forEach(function(p){if(p.code)codes.push(p.code);});
+      else if(o.code)codes.push(o.code);
+      return {name:o.me||"",codes:codes,started:!!o.me,open:Array.isArray(o.people)?o.people.filter(function(p){return !p.code;}).length:0};
+    }
+  }catch(e){}
+  return {name:"",codes:[],started:false,open:0};
 }
 function build(){
-  var own=eigene(), alle=(own.code?[own.code]:[]).concat(P.codes), decoded=[], fehler=[];
-  alle.forEach(function(c){try{decoded.push(D.decode(c));}catch(e){fehler.push(e.message);}});
-  var list=A.sammle(decoded), paar=A.findePaar(list,own.name), m={own:own,fehler:fehler,list:list,paar:paar,screens:["start"]};
-  if(paar){
-    m.vA=A.vergleiche(paar.a,paar.b);m.vB=A.vergleiche(paar.b,paar.a);
-    m.k=A.kuerzel(paar.a.name,paar.b.name);
+  var own=eigene(), seen={}, alle=[], decoded=[], fehler=[];
+  own.codes.concat(P.codes).forEach(function(c){if(!seen[c]){seen[c]=1;alle.push(c);}});
+  alle.forEach(function(c){try{var d=D.decode(c);d._code=c;decoded.push(d);}catch(e){fehler.push(e.message);}});
+  var list=A.sammle(decoded), pairs=A.paare(list,own.name);
+  var m={own:own,fehler:fehler,list:list,pairs:pairs,konflikte:A.konflikte(list),personen:A.personen(list),screens:["start"],paar:null};
+  var sel=null;pairs.forEach(function(x){if(x.ready&&x.key===P.sel)sel=x;});
+  if(sel){
+    m.paar={a:sel.a,b:sel.b};
+    m.vA=A.vergleiche(sel.a,sel.b);m.vB=A.vergleiche(sel.b,sel.a);
+    m.k=A.kuerzel(sel.a.name,sel.b.name);
     for(var b=1;b<=4;b++){A.ITEMS.forEach(function(it,i){if(it.b===b)m.screens.push("i"+i);});m.screens.push("t"+b);}
     m.screens.push("hl");
     for(var j=0;j<NG;j++)m.screens.push("g"+j);
     m.screens.push("ende");
-  }
-  if(P.pos>=m.screens.length)P.pos=0;
+  }else if(P.view==="play")P.view="start";
   return m;
 }
+function pos(){return P.view==="play"&&M.paar?Math.max(1,Math.min(M.screens.length-1,game().pos)):0;}
 function frame(night,dealt){
-  var k=M.screens[P.pos], a=app();
+  var k=(P.view==="fb"?"fb":P.sel+"|"+M.screens[pos()]), a=app();
   if(k!==lastKey){lastKey=k;window.scrollTo(0,0);a.classList.remove("deal","fade","pop");void a.offsetWidth;if(!RM)a.classList.add(dealt?"deal":"fade");}
   document.body.classList.toggle("night",!!night);
   var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=night?"#0E1117":"#17110E";
-  var p=$("bar");
-  if(P.pos===0){p.innerHTML="";p.classList.remove("on");}
+  var p=$("bar"), at=pos();
+  if(!at){p.innerHTML="";p.classList.remove("on");}
   else{
     var groups=[[],[],[],[],[]];
     M.screens.forEach(function(s,idx){if(idx===0)return;var g=s.charAt(0)==="i"||s.charAt(0)==="t"?(s.charAt(0)==="t"?+s.charAt(1)-1:A.ITEMS[+s.slice(1)].b-1):4;groups[g].push(idx);});
-    p.innerHTML=groups.map(function(g){var f=g.length?g.filter(function(x){return x<=P.pos;}).length/g.length:0;return '<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';}).join("");
+    p.innerHTML=groups.map(function(g){var f=g.length?g.filter(function(x){return x<=at;}).length/g.length:0;return '<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';}).join("");
     p.classList.add("on");
   }
 }
-function nav(d){P.pos=Math.max(0,Math.min(M.screens.length-1,P.pos+d));save();render();}
+function nav(d){var G=game();G.pos=Math.max(1,Math.min(M.screens.length-1,pos()+d));save();render();}
+function home(){P.view="start";save();render();}
 function render(){
   if(!D||!A){app().innerHTML='<div class="screen"><h2>decoder.js fehlt</h2><p class="lead" style="margin-top:12px">Die Auswertung braucht die Datei decoder.js im selben Ordner.</p></div>';return;}
   M=build();
-  var s=M.screens[P.pos];
+  if(P.view==="fb")return feedback();
+  var s=M.screens[pos()];
   if(s==="start")return start();
   if(s==="hl")return hl();
   if(s==="ende")return ende();
@@ -348,52 +419,67 @@ function render(){
   if(s.charAt(0)==="g")return ged(+s.slice(1));
 }
 
-/* ---------- Start: Codes ---------- */
+/* ---------- Start: die Sammlung ---------- */
 function start(){
   frame(false,false);
-  var p=M.paar, own=M.own, nA=p?p.a.name:(own.name||"dir"), nB=p?p.b.name:(own.partner||"der anderen Person");
-  var hasA=!!p||!!own.code, hasB=!!p;
-  var notes=[];
-  if(own.started&&!own.code)notes.push('Dein eigener Teil ist auf diesem Handy noch nicht fertig. <a href="index.html" style="color:var(--on)">Zur Test-App</a>');
+  var own=M.own, ready=M.pairs.filter(function(x){return x.ready;}), half=M.pairs.filter(function(x){return !x.ready;});
   var warn=[];if(meldung)warn.push(esc(meldung));
   M.fehler.forEach(function(f){warn.push("Ein Code ist nicht lesbar ("+esc(f)+"). Vermutlich wurde er nicht vollständig kopiert.");});
-  var begun=Object.keys(P.rev).length>0;
+  M.konflikte.forEach(function(n){warn.push("Unter „"+esc(n)+"“ gibt es Codes mit unterschiedlichen Antworten über sich. Entweder sind es zwei Personen mit gleichem Namen, oder Teil 1 wurde neu gemacht. Es zählt der zuletzt eingefügte Code.");});
+  var notes=[];
+  if(own.started&&!own.codes.length)notes.push('Deine eigenen Codes erscheinen hier automatisch, sobald ein Teil 2 fertig ist. <a href="index.html" style="color:var(--on)">Zur Test-App</a>');
+  else if(own.open)notes.push(own.open===1?'Ein Teil 2 ist in deiner App noch offen.':own.open+' Teile 2 sind in deiner App noch offen.');
+  var readyHtml=ready.map(function(x){
+    var G=P.games[x.key], at=G&&G.pos>1?" · weiter bei "+(G.pos>=M.screens.length-1&&x.key===P.sel?"dem Abschluss":"Karte "+Math.min(N,cardNo(G.pos))):"";
+    return '<button class="pairbtn" data-k="'+esc(x.key)+'"><span class="pn">'+esc(x.nameA)+' und '+esc(x.nameB)+'</span><span class="ps">Aufdecken'+esc(at)+'</span></button>';
+  }).join("");
+  var halfHtml=half.map(function(x){
+    var fehlt=x.a?x.nameB+" über "+x.nameA:x.nameA+" über "+x.nameB;
+    return '<li><span class="q">'+esc(x.nameA)+' und '+esc(x.nameB)+'</span><span class="d">Es fehlt der Code von '+esc(fehlt)+'.</span></li>';
+  }).join("");
   app().innerHTML='<div class="screen">'+
     '<p class="kicker" style="margin-top:34px">Entweder oder</p><h1>Aufdecken</h1>'+
     '<p class="lead" style="margin-top:14px">Setzt euch nebeneinander, ein Handy reicht. Bei jeder Karte: erst raten und kurz reden, dann aufdecken.</p>'+
-    '<div style="margin-top:18px">'+
-      '<div class="slot'+(hasA?" ok":"")+'"><span>Code von '+esc(nA)+'</span><span class="st">'+(hasA?"liegt vor":"fehlt noch")+'</span></div>'+
-      '<div class="slot'+(hasB?" ok":"")+'"><span>Code von '+esc(nB)+'</span><span class="st">'+(hasB?"liegt vor":"fehlt noch")+'</span></div>'+
-    '</div>'+
+    (erfolg?'<p class="flash" role="status">'+esc(erfolg)+'</p>':'')+
+    (ready.length?'<p class="plab">Bereit zum Aufdecken</p>'+readyHtml:'<p class="plab">Noch kein Paar komplett</p><p class="lead" style="font-size:15px">Ein Paar ist komplett, wenn beide Codes da sind: der von Anna über Ben und der von Ben über Anna.</p>')+
+    (half.length?'<p class="plab">Es fehlt noch ein Code</p><ul class="list">'+halfHtml+'</ul>':'')+
     (notes.length?'<p class="lead" style="margin-top:12px;font-size:14px">'+notes.join(" ")+'</p>':'')+
-    (hasB?'':'<label for="paste">Code einfügen</label><textarea id="paste" placeholder="PT15.…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>'+
-      '<p class="lead" style="margin-top:8px;font-size:14px">Die ganze WhatsApp-Nachricht geht auch, alles außer dem Code wird ignoriert. Nichts davon verlässt dieses Handy.</p>'+
-      '<button class="btn line" id="add" style="margin-top:12px">Einfügen</button>')+
+    '<label for="paste">Codes einfügen</label><textarea id="paste" placeholder="PT15.…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea>'+
+    '<p class="lead" style="margin-top:8px;font-size:14px">Ganze WhatsApp-Nachrichten gehen, auch mehrere auf einmal. Alles außer den Codes wird ignoriert. Nichts davon verlässt dieses Handy.</p>'+
+    '<button class="btn line" id="add" style="margin-top:12px">Einfügen</button>'+
     '<p class="warn" role="alert">'+warn.join("<br>")+'</p>'+
-    '<div style="margin-top:auto;padding-top:26px">'+
-      '<button class="btn" id="go"'+(p?"":" disabled")+'>'+(begun?"Weiterspielen":"Los geht’s")+'</button>'+
-      '<div class="links" style="justify-content:center"><button class="link" id="clear">Eingefügte Codes löschen</button>'+(begun?'<button class="link" id="restart">Von vorn beginnen</button>':'')+'</div>'+
+    '<p class="lead" style="margin-top:22px;font-size:14px">In der Sammlung: '+M.list.length+(M.list.length===1?" Code":" Codes")+' von '+M.personen+(M.personen===1?" Person":" Personen")+'.</p>'+
+    '<div class="links" style="margin-top:auto;padding-top:18px">'+
+      (M.list.length?'<button class="link" id="fb">Feedback zu den Fragen</button><button class="link" id="copyall">Alle Codes kopieren</button>':'')+
+      '<a class="link" href="index.html">Zur Test-App</a>'+
+      (P.codes.length?'<button class="link" id="clear">Sammlung löschen</button>':'')+
     '</div></div>';
-  meldung="";
-  if($("add"))$("add").onclick=function(){
+  meldung="";erfolg="";
+  Array.prototype.forEach.call(app().querySelectorAll(".pairbtn"),function(b){
+    b.onclick=function(){P.sel=b.dataset.k;P.view="play";game();save();render();};
+  });
+  $("add").onclick=function(){
     var raw=$("paste").value, found=D.findCodes(raw);
-    if(!found.length){meldung=/PT1[34]\./.test(raw)?"Das ist ein Code aus einer alten Version mit anderen Fragen. Bitte beide die aktuelle Test-App nutzen.":"Im eingefügten Text steckt kein Code. Ein Code beginnt mit PT15.";render();return;}
-    var added=0;
-    found.forEach(function(c){
-      if(own.code&&c===own.code){meldung="Das ist dein eigener Code. Füge den Code von "+(own.partner||"der anderen Person")+" ein.";return;}
-      if(P.codes.indexOf(c)<0){P.codes.push(c);added++;}
-    });
-    save();M=build();
-    if(added&&!M.paar){
-      var last=null;try{last=D.decode(found[found.length-1]);}catch(e){}
-      if(last)meldung="Dieser Code ist von "+last.name+" für "+last.partner+". Er passt nicht"+(own.name?" zu "+own.name+" und "+own.partner:"")+". Habt ihr die Namen gleich geschrieben?";
-    }
+    if(!found.length){meldung=/PT1[34]\./.test(raw)?"Das ist ein Code aus einer alten Version mit anderen Fragen. Bitte die aktuelle Test-App nutzen.":"Im eingefügten Text steckt kein Code. Ein Code beginnt mit PT15.";render();return;}
+    var added=0,known=0;
+    found.forEach(function(c){if(P.codes.indexOf(c)>=0||own.codes.indexOf(c)>=0)known++;else{P.codes.push(c);added++;}});
+    save();
+    erfolg=added?(added===1?"Ein Code hinzugefügt.":added+" Codes hinzugefügt."):"";
+    if(!added)meldung=known===1?"Dieser Code ist schon in der Sammlung.":"Diese Codes sind schon in der Sammlung.";
     render();
   };
-  $("go").onclick=function(){if(M.paar)nav(1);};
-  $("clear").onclick=function(){if(confirm("Eingefügte Codes und den Spielstand löschen? Der eigene Code in der Test-App bleibt.")){P={codes:[],pos:0,rev:{}};save();render();}};
-  if($("restart"))$("restart").onclick=function(){P.rev={};P.pos=0;save();render();};
+  if($("fb"))$("fb").onclick=function(){P.view="fb";save();render();};
+  if($("copyall"))$("copyall").onclick=function(){
+    var txt=M.list.map(function(d){return d._code;}).join("\n"), b=$("copyall");
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){b.textContent="Kopiert";},function(){b.textContent="Kopieren nicht möglich";});
+    else b.textContent="Kopieren nicht möglich";
+    setTimeout(function(){b.textContent="Alle Codes kopieren";},2500);
+  };
+  if($("clear"))$("clear").onclick=function(){
+    if(confirm("Alle eingefügten Codes und Spielstände löschen? Deine eigenen Codes in der Test-App bleiben.")){P={codes:[],sel:null,view:"start",games:{}};save();render();}
+  };
 }
+function cardNo(p){var s=M.screens[p]||"";return s.charAt(0)==="i"?+s.slice(1)+1:N;}
 
 /* ---------- Eine Karte: erst raten, dann zweimal aufdecken ---------- */
 function deckHTML(head,num,q,small){
@@ -406,7 +492,7 @@ function answerCards(item,tokA,tokZ,hitA,hitZ){
 }
 function tok(kind,letter,label){return '<span class="tok '+kind+'" role="img" aria-label="'+esc(label)+'">'+esc(letter)+'</span>';}
 function item(i){
-  var it=A.ITEMS[i], st=P.rev["i"+i]||0, p=M.paar, names=[p.a.name,p.b.name];
+  var G=game(), it=A.ITEMS[i], st=G.rev["i"+i]||0, p=M.paar, names=[p.a.name,p.b.name];
   frame(false,true);
   var body="",cap="",ask="",legend="",tA="",tZ="",hA=false,hZ=false;
   if(st===0){
@@ -427,16 +513,16 @@ function item(i){
   }
   var btn=st===0?"Aufdecken: über "+esc(names[0]):st===1?"Aufdecken: über "+esc(names[1]):"Nächste Karte";
   app().innerHTML='<div class="screen'+(st>0?' rev':'')+'">'+
-    '<div class="top"><b>'+esc(A.BLOCKNAMEN[it.b-1])+'</b><button class="txt" id="home">Übersicht</button></div>'+
+    '<div class="top"><b>'+esc(A.BLOCKNAMEN[it.b-1])+'</b><button class="txt" id="home">Sammlung</button></div>'+
     deckHTML(A.BLOCKNAMEN[it.b-1],(i+1)+" / "+N,it.qs,st>0)+
     '<div class="hand">'+body+answerCards(it,tA,tZ,hA,hZ)+legend+
       (cap?'<p class="cap" role="status">'+cap+'</p>':'')+(ask?'<p class="ask">'+ask+'</p>':'')+'</div>'+
     '<button class="btn" id="go" style="margin-top:18px">'+btn+'</button>'+
     '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
   if(st>0&&!RM){var a=app();a.classList.remove("deal","fade");void a.offsetWidth;a.classList.add("pop");}
-  $("go").onclick=function(){if(st<2){P.rev["i"+i]=st+1;save();render();}else nav(1);};
-  $("back").onclick=function(){if(st>0){P.rev["i"+i]=st-1;save();render();}else nav(-1);};
-  $("home").onclick=function(){P.pos=0;save();render();};
+  $("go").onclick=function(){if(st<2){G.rev["i"+i]=st+1;save();render();}else nav(1);};
+  $("back").onclick=function(){if(st>0){G.rev["i"+i]=st-1;save();render();}else if(pos()>1)nav(-1);else home();};
+  $("home").onclick=home;
 }
 
 /* ---------- Blockende: Zählung, nie eine Gesamtzahl ---------- */
@@ -445,7 +531,7 @@ function tally(b){
   var p=M.paar;
   function row(v,ueber,tipper){var B=v.bloecke[b-1];return '<p class="who">'+esc(tipper)+' über '+esc(ueber)+'</p><p class="n">'+B.treffer+' von '+B.gezaehlt+'</p>'+(B.offen?'<p class="o">'+B.offen+' offen gelassen</p>':'');}
   app().innerHTML='<div class="screen">'+
-    '<div class="top"><b>Block '+b+' von 4</b><button class="txt" id="home">Übersicht</button></div>'+
+    '<div class="top"><b>Block '+b+' von 4</b><button class="txt" id="home">Sammlung</button></div>'+
     '<div class="tally"><div class="qhead"><span>Geschafft</span></div><p class="qtext" style="margin-bottom:4px">'+esc(A.BLOCKNAMEN[b-1])+'</p>'+
       row(M.vA,p.a.name,p.b.name)+row(M.vB,p.b.name,p.a.name)+'</div>'+
     '<p class="lead" style="margin-top:22px;padding:0 4px">'+(b===1?"Raten ergäbe die Hälfte. Wer sich gut kennt, trifft grob 65 bis 75 Prozent. Daneben liegen ist kein Zeugnis, sondern der interessante Teil.":"Wo hat euch etwas überrascht?")+'</p>'+
@@ -453,7 +539,7 @@ function tally(b){
     '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
   $("go").onclick=function(){nav(1);};
   $("back").onclick=function(){nav(-1);};
-  $("home").onclick=function(){P.pos=0;save();render();};
+  $("home").onclick=home;
 }
 
 /* ---------- Highlights ---------- */
@@ -462,21 +548,21 @@ function li(i,d){return '<li><span class="q">'+esc(A.ITEMS[i].t)+'</span><span c
 function ul(items){if(!items.length)return '';var h='<ul class="list">'+items.slice(0,4).join('')+'</ul>';if(items.length>4)h+='<details><summary>Noch '+(items.length-4)+' weitere</summary><ul class="list">'+items.slice(4).join('')+'</ul></details>';return h;}
 function hl(){
   frame(false,false);
-  var p=M.paar, dirs=[{v:M.vA,ueber:p.a.name,tipper:p.b.name,T:p.b},{v:M.vB,ueber:p.b.name,tipper:p.a.name,T:p.a}], h="", L, any;
+  var p=M.paar, dirs=[{v:M.vA,ueber:p.a.name,tipper:p.b.name},{v:M.vB,ueber:p.b.name,tipper:p.a.name}], h="", L;
   h+='<h3>Sicher getippt und daneben</h3><p class="lead">Woher kam die Sicherheit? Und sieht der andere vielleicht etwas, das man selbst nicht sieht?</p>';
-  L=[];dirs.forEach(function(x){A.highlights(x.v).sicherDaneben.forEach(function(i){var r=x.v.items[i];L.push(li(i,esc(x.tipper)+" war sicher: "+esc(A.text(A.ITEMS[i],r.tipp))+". "+esc(x.ueber)+" sagt: "+esc(A.text(A.ITEMS[i],r.selbst))+"."));});});
+  L=[];dirs.forEach(function(x){A.highlights(x.v).sicherDaneben.forEach(function(i){var r=x.v.items[i];L.push(li(i,esc(x.tipper)+" hat getippt: „"+esc(A.text(A.ITEMS[i],r.tipp))+"“ "+esc(x.ueber)+" sagt über sich: „"+esc(A.text(A.ITEMS[i],r.selbst))+"“"));});});
   h+=L.length?ul(L):'<p class="lead" style="margin-top:8px">Keine. Wo ihr euch sicher wart, lagt ihr richtig.</p>';
   h+='<h3>Unsicher und trotzdem getroffen</h3>';
-  L=[];dirs.forEach(function(x){A.highlights(x.v).unsicherRichtig.forEach(function(i){L.push(li(i,esc(x.tipper)+" lag richtig: "+esc(A.text(A.ITEMS[i],x.v.items[i].selbst))+"."));});});
+  L=[];dirs.forEach(function(x){A.highlights(x.v).unsicherRichtig.forEach(function(i){L.push(li(i,esc(x.tipper)+" lag richtig: „"+esc(A.text(A.ITEMS[i],x.v.items[i].selbst))+"“"));});});
   h+=L.length?ul(L):'<p class="lead" style="margin-top:8px">Keine.</p>';
   var bd=A.beideDaneben(M.vA,M.vB);
   h+='<h3>Hier lagt ihr beide daneben</h3>';
-  h+=bd.length?ul(bd.map(function(i){return li(i,esc(A.ITEMS[i].a)+" oder "+esc(A.ITEMS[i].z));})):'<p class="lead" style="margin-top:8px">Keine Frage, bei der ihr beide danebenlagt.</p>';
+  h+=bd.length?ul(bd.map(function(i){return li(i,esc(A.ITEMS[i].qs));})):'<p class="lead" style="margin-top:8px">Keine Frage, bei der ihr beide danebenlagt.</p>';
   var g=A.gleichheit(p.a,p.b);
   h+='<h3>Wo tickt ihr gleich?</h3><p class="lead">Verglichen wird, was jeder über sich selbst gesagt hat.</p><ul class="list">'+g.map(function(B){
     return '<li><span class="q">'+esc(B.name)+'</span><span class="d">Bei '+B.gleich+' von '+B.gesamt+' Fragen gleich.</span>'+
       (B.verschieden.length?'<details><summary>Hier verschieden</summary><ul class="list">'+B.verschieden.map(function(i){
-        return li(i,esc(p.a.name)+": "+esc(A.text(A.ITEMS[i],p.a.self.items[i].value))+". "+esc(p.b.name)+": "+esc(A.text(A.ITEMS[i],p.b.self.items[i].value))+".");}).join("")+'</ul></details>':'')+'</li>';
+        return li(i,esc(p.a.name)+": „"+esc(A.text(A.ITEMS[i],p.a.self.items[i].value))+"“ "+esc(p.b.name)+": „"+esc(A.text(A.ITEMS[i],p.b.self.items[i].value))+"“");}).join("")+'</ul></details>':'')+'</li>';
   }).join("")+'</ul>';
   var pa=A.projektion(p.a), pb=A.projektion(p.b);
   if(pa||pb){
@@ -484,18 +570,18 @@ function hl(){
       '<p class="lead" style="margin-top:12px">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen ein Stück weit sich selbst. Wer sich ähnlich ist, liegt damit oft sogar richtig.</p>';
   }
   app().innerHTML='<div class="screen">'+
-    '<div class="top"><b>Worüber es sich zu reden lohnt</b><button class="txt" id="home">Übersicht</button></div>'+
+    '<div class="top"><b>Worüber es sich zu reden lohnt</b><button class="txt" id="home">Sammlung</button></div>'+
     '<h2 style="margin-top:6px">Eure Highlights</h2>'+h+
     '<button class="btn" id="go" style="margin-top:30px">Zu den Gedankenexperimenten</button>'+
     '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
   $("go").onclick=function(){nav(1);};
   $("back").onclick=function(){nav(-1);};
-  $("home").onclick=function(){P.pos=0;save();render();};
+  $("home").onclick=home;
 }
 
 /* ---------- Gedankenexperimente: ohne Tipp, ohne Zählung ---------- */
 function ged(j){
-  var g=A.GEDANKEN[j], st=P.rev["g"+j]||0, p=M.paar;
+  var G=game(), g=A.GEDANKEN[j], st=G.rev["g"+j]||0, p=M.paar;
   frame(true,true);
   var tA="",tZ="",cap="";
   if(st>0){
@@ -506,16 +592,16 @@ function ged(j){
     cap=va===vb?"Gleich gewählt.":"Verschieden gewählt.";
   }
   app().innerHTML='<div class="screen'+(st>0?' rev':'')+'">'+
-    '<div class="top"><b>Ohne Tipp, ohne Zählung</b><button class="txt" id="home">Übersicht</button></div>'+
+    '<div class="top"><b>Ohne Tipp, ohne Zählung</b><button class="txt" id="home">Sammlung</button></div>'+
     deckHTML("Gedankenexperiment",(j+1)+" / "+NG,g.q,st>0)+
     '<div class="hand">'+(st===0?'<p class="step">Was hat der andere wohl gewählt?</p>':'')+answerCards(g,tA,tZ,false,false)+
       (st>0?'<p class="legend"><span>'+tok("solid",M.k[0],"")+esc(p.a.name)+'</span><span>'+tok("solid",M.k[1],"")+esc(p.b.name)+'</span></p><p class="cap" role="status">'+cap+'</p><p class="ask">'+esc(g.g)+'</p>':'')+'</div>'+
     '<button class="btn" id="go" style="margin-top:18px">'+(st===0?"Aufdecken":j<NG-1?"Nächste Karte":"Zum Abschluss")+'</button>'+
     '<div class="foot"><button class="txt" id="back">Zurück</button></div></div>';
   if(st>0&&!RM){var a=app();a.classList.remove("deal","fade");void a.offsetWidth;a.classList.add("pop");}
-  $("go").onclick=function(){if(st===0){P.rev["g"+j]=1;save();render();}else nav(1);};
-  $("back").onclick=function(){if(st>0){P.rev["g"+j]=0;save();render();}else nav(-1);};
-  $("home").onclick=function(){P.pos=0;save();render();};
+  $("go").onclick=function(){if(st===0){G.rev["g"+j]=1;save();render();}else nav(1);};
+  $("back").onclick=function(){if(st>0){G.rev["g"+j]=0;save();render();}else nav(-1);};
+  $("home").onclick=home;
 }
 
 /* ---------- Abschluss ---------- */
@@ -530,15 +616,48 @@ function ende(){
     '<p class="lead">Zur Einordnung: Raten ergäbe die Hälfte. Wer sich gut kennt, trifft grob 65 bis 75 Prozent.</p>'+
     '<p class="callout">Welche Antwort hat euch am meisten überrascht?</p>'+
     '<div style="margin-top:auto;padding-top:28px"><button class="btn line" id="again">Noch einmal durchgehen</button>'+
-    '<div class="links" style="justify-content:center"><button class="link" id="back">Zurück</button><button class="link" id="home">Übersicht</button></div></div></div>';
-  $("again").onclick=function(){P.rev={};P.pos=1;save();render();};
+    '<div class="links" style="justify-content:center"><button class="link" id="back">Zurück</button><button class="link" id="home">Zur Sammlung</button></div></div></div>';
+  $("again").onclick=function(){var G=game();G.rev={};G.pos=1;save();render();};
   $("back").onclick=function(){nav(-1);};
-  $("home").onclick=function(){P.pos=0;save();render();};
+  $("home").onclick=home;
+}
+
+/* ---------- Feedback zu den Fragen, über alle Codes der Sammlung ---------- */
+function feedback(){
+  frame(false,false);
+  var F=A.feedback(M.list);
+  function frac(a,b){return a+" von "+b;}
+  function reasons(x){
+    var r=[];
+    if(x.einseitig)r.push(x.mehr+" von "+x.selbst+" wählen über sich dieselbe Antwort");
+    if(x.unsicher)r.push(frac(x.unsicher,x.getippt)+" Tipps unsicher");
+    if(x.offen)r.push(frac(x.offen,x.fremd)+" Mal nicht beurteilt");
+    if(x.lang)r.push(frac(x.lang,x.karten)+" Mal über 15 Sekunden");
+    return r;
+  }
+  var top=F.items.filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;}).slice(0,5);
+  var h='<p class="lead" style="margin-top:10px">Grundlage: '+F.codes+(F.codes===1?" Code":" Codes")+' von '+F.personen+(F.personen===1?" Person":" Personen")+'. Bei wenigen Codes sind das Hinweise, keine Belege.</p>';
+  h+='<h3>Am auffälligsten</h3>';
+  h+=top.length?'<ul class="list">'+top.map(function(x){return '<li><span class="q">'+(x.i+1)+' · '+esc(A.ITEMS[x.i].t)+'</span><span class="d">'+esc(reasons(x).join(". "))+'.</span></li>';}).join("")+'</ul>':'<p class="lead" style="margin-top:8px">Bisher fällt keine Frage auf.</p>';
+  h+='<details><summary>Alle 24 Fragen</summary><ul class="list">'+F.items.map(function(x){
+    return '<li><span class="q">'+(x.i+1)+' · '+esc(A.ITEMS[x.i].t)+'</span><span class="d">Über sich: A '+x.a+', B '+x.b+
+      '. Getippt: '+x.getippt+', davon unsicher '+x.unsicher+'. Nicht beurteilt: '+x.offen+'. Über 15 Sekunden: '+frac(x.lang,x.karten)+'.</span></li>';
+  }).join("")+'</ul></details>';
+  h+='<h3>Gedankenexperimente</h3><ul class="list">'+F.gedanken.map(function(x){
+    return '<li><span class="q">G'+(x.i+1)+' · '+esc(A.GEDANKEN[x.i].t)+'</span><span class="d">'+esc(A.GEDANKEN[x.i].a)+': '+x.a+'. '+esc(A.GEDANKEN[x.i].z)+': '+x.b+'. Über 15 Sekunden: '+frac(x.lang,x.a+x.b)+'.</span></li>';
+  }).join("")+'</ul>';
+  h+='<p class="lead" style="margin-top:22px;font-size:14px">So wird gezählt: „Unsicher“ und „nicht beurteilt“ stammen aus Teil 2. „Über 15 Sekunden“ zählt Karten aus Teil 1 und Teil 2. Wählen fast alle über sich dasselbe, trennt die Frage kaum. Jede Person zählt über sich nur einmal.</p>';
+  app().innerHTML='<div class="screen">'+
+    '<div class="top"><b>Feedback</b><button class="txt" id="home">Sammlung</button></div>'+
+    '<h2 style="margin-top:6px">Wie die Fragen ankommen</h2>'+h+
+    '<div class="foot" style="margin-top:20px"><button class="txt" id="back">Zurück zur Sammlung</button></div></div>';
+  $("home").onclick=home;$("back").onclick=home;
 }
 
 document.addEventListener("keydown",function(e){
   var tg=e.target&&e.target.tagName;
   if(tg==="INPUT"||tg==="TEXTAREA"||tg==="BUTTON"||tg==="A"||e.metaKey||e.ctrlKey||e.altKey)return;
+  if(P.view!=="play")return;
   if(e.key==="Enter"||e.key==="ArrowRight"){var g=$("go");if(g&&!g.disabled){e.preventDefault();g.click();}}
   else if(e.key==="ArrowLeft"){var b=$("back");if(b){e.preventDefault();b.click();}}
 });

@@ -2,7 +2,7 @@
 
 Stand: 06.10.2026 · Itemliste v1.5 · Bereich 2 besitzt diese Datei. Aufbau wie PT14, nur mit 24 Fragen und 6 Gedankenexperimenten.
 
-Ein Code pro Person. Er entsteht erst, wenn beide Teile fertig sind: der Teil über sich selbst und der Teil über die andere Person. Codes verschiedener Präfixe werden nie gemischt.
+Ein Code pro Paarung: Er enthält den Teil über sich und den Teil über genau eine andere Person. Wer mit mehreren spielt, hat mehrere Codes mit demselben Teil über sich. Ein Code entsteht erst, wenn beide Teile fertig sind. Codes verschiedener Präfixe werden nie gemischt.
 
 ## Aufbau
 
@@ -29,7 +29,7 @@ Base64url: `+` wird `-`, `/` wird `_`, `=` am Ende entfällt. Namen stehen nur k
 | `n` | Name der Person, die den Code erzeugt hat |
 | `p` | Name der anderen Person, wie `n` ihn eingetippt hat |
 
-Das gewählte Pronomen (er/sie) steht nicht im Code, es betrifft nur die Anzeige auf dem eigenen Handy. Die Auswertung prüft über Kreuz: `n` des einen Codes gleich `p` des anderen, tolerant gegenüber Leerzeichen sowie Groß- und Kleinschreibung.
+Das gewählte Pronomen (er/sie) steht nicht im Code, es betrifft nur die Anzeige auf dem eigenen Handy. Die Namen sind der Schlüssel der Sammlung. Der Einladungslink `index.html?mit=Name` füllt den Namen beim anderen vor, damit er gleich geschrieben ist. Die Auswertung prüft über Kreuz: `n` des einen Codes gleich `p` des anderen, tolerant gegenüber Leerzeichen sowie Groß- und Kleinschreibung.
 
 ## Nutzdaten
 

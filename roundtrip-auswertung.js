@@ -92,5 +92,44 @@ check("Sonderfälle: kein Paar, fremde Namen, Kürzel",function(){
   k=A.kuerzel("Ömer","özlem");if(k[0]===k[1])throw new Error("Kürzel gleich: "+k);
 });
 
+check("Sammlung: Paare über Namen, unvollständige Paare, Konflikte",function(){
+  var anna=person("Anna","Ben"), annaT=person("Anna","Thomas"), ben=person("ben ","anna"), tom=person("Thomas","Lea");
+  annaT.self=anna.self; /* dieselbe Anna, Teil 1 einmal */
+  var codes=[K.buildCode(anna),K.buildCode(annaT),K.buildCode(ben),K.buildCode(tom)];
+  var list=A.sammle(codes.map(function(c){return D.decode(c);}));
+  var pr=A.paare(list,"Anna");
+  eq(pr.length,3,"drei Paare");
+  eq(pr[0].ready,true,"Anna und Ben komplett");eq(A.norm(pr[0].nameA),"anna","ich zuerst");eq(A.norm(pr[0].nameB),"ben","Partner");
+  eq(pr[0].a.name,"Anna","a ist Annas Code");eq(A.norm(pr[0].b.name),"ben","b ist Bens Code");
+  var at=pr.filter(function(x){return A.norm(x.nameB)==="thomas"||A.norm(x.nameA)==="thomas";});
+  eq(at.length,2,"Anna/Thomas und Thomas/Lea");at.forEach(function(x){eq(x.ready,false,"unvollständig");});
+  eq(A.personen(list),3,"drei Autoren");
+  eq(A.konflikte(list).length,0,"kein Konflikt bei gleichem Teil 1");
+  var anna2=person("Anna","Max");var l2=A.sammle(codes.concat([K.buildCode(anna2)]).map(function(c){return D.decode(c);}));
+  if(A.konflikte(l2).join()!=="Anna"&&A.konflikte(l2).join()!=="")throw new Error("Konflikt falsch: "+A.konflikte(l2));
+  /* zwei Annas mit zufällig verschiedenen Antworten: Konflikt muss erkannt werden, sofern sie sich unterscheiden */
+  var differ=anna2.self.ans.join("")+anna2.self.ged.join("")!==anna.self.ans.join("")+anna.self.ged.join("");
+  eq(A.konflikte(l2).length,differ?1:0,"Konflikt erkannt");
+  /* Schlüssel unabhängig davon, wer ich bin */
+  eq(A.paare(list,"Ben")[0].key,pr[0].key,"Schlüssel stabil");
+});
+
+check("Feedback: Zählungen gegen die Rohdaten",function(){
+  var P=[person("Anna","Ben"),person("Ben","Anna"),person("Cleo","Anna"),person("Anna","Cleo")];
+  P[3].self=P[0].self;
+  P.forEach(function(S){S.self.t=S.self.t.map(function(){return Math.random()<.3?20000:3000;});S.other.t=S.other.t.map(function(){return Math.random()<.3?20000:3000;});});
+  var list=A.sammle(P.map(function(S){return D.decode(K.buildCode(S));}));
+  var F=A.feedback(list);
+  eq(F.codes,4,"Codes");eq(F.personen,3,"Personen");
+  var selfs=[P[3],P[1],P[2]]; /* je Person der letzte Code */
+  for(var i=0;i<K.N;i++){
+    var x=F.items[i],a=0,un=0,off=0,lang=0,tip=0;
+    selfs.forEach(function(S){if(S.self.ans[i]===0)a++;if(S.self.t[i]>=15000)lang++;});
+    P.forEach(function(S){var o=S.other.ans[i];if(o.s)off++;else{tip++;if(o.u)un++;}if(S.other.t[i]>=15000)lang++;});
+    eq(x.a,a,"A "+i);eq(x.b,3-a,"B "+i);eq(x.unsicher,un,"unsicher "+i);eq(x.offen,off,"offen "+i);eq(x.getippt,tip,"getippt "+i);eq(x.lang,lang,"lang "+i);eq(x.karten,7,"karten "+i);
+  }
+  for(var j=0;j<K.NG;j++){var g=F.gedanken[j],ga=0;selfs.forEach(function(S){if(S.self.ged[j]===0)ga++;});eq(g.a,ga,"G A "+j);eq(g.b,3-ga,"G B "+j);}
+});
+
 console.log(fails?fails+" Prüfung(en) fehlgeschlagen":"Round-Trip Auswertung: alles ok");
 process.exit(fails?1:0);

@@ -126,7 +126,6 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 .part .ps{font-weight:600;color:var(--warm);white-space:nowrap}
 .part.fin .ps{color:var(--accent)}
 .part:disabled .ps{color:var(--on-mute);font-weight:500}
-.flash{margin:18px 0 0;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--accent)}
 
 /* Fertig und Code */
 .stat{margin:22px 0 4px;font-family:var(--serif);font-size:64px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent)}
@@ -160,6 +159,15 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
   .tools{margin-top:12px}
   .foot{min-height:44px;padding-top:4px}
 }
+.flash{margin:18px 0 0;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--accent)}
+.plab{margin:28px 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
+.fhint{margin:-8px 0 0;font-size:14px;line-height:1.45;color:var(--card-soft)}
+.privacy{margin:16px 0 0;padding:12px 14px;border:1px solid var(--on-line);border-radius:12px;font-size:14px;line-height:1.5;color:var(--on-soft)}
+.invite{margin:18px 0 4px;padding:16px;border:1.5px solid var(--accent);border-radius:16px}
+.invite p{margin:0 0 12px;font-family:var(--serif);font-size:19px}
+.part.wait{background:none;color:var(--on-mute);border:1.5px dashed var(--on-line);box-shadow:none}
+.part.wait .pk,.part.wait .pm{color:var(--on-mute)}
+.part.wait .ps{color:var(--on-mute);font-weight:500}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
@@ -255,20 +263,56 @@ root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,BLOCKNAMEN:BLOCKNAME
 var K=window.EOK, N=K.N, NG=K.NG, STORE="pt-v15";
 var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 var S=load()||fresh(), flashMsg="";
+takeInvite();
 
 function arr(n,v){var a=[];for(var i=0;i<n;i++)a.push(typeof v==="function"?v():v);return a;}
-function fresh(){return {v:K.VERSION,me:"",partner:"",pron:"",view:"setup",part:null,intro:false,
-  self:{i:0,done:false,ans:arr(N,null),ged:arr(NG,null),t:arr(N+NG,0),flip:{}},
-  other:{i:0,done:false,ans:arr(N,function(){return {v:null,u:false,s:false};}),t:arr(N,0),flip:{}},
-  code:null};}
-function load(){try{var o=JSON.parse(localStorage.getItem(STORE)||"null");if(o&&o.v===K.VERSION)return o;}catch(e){}return null;}
+function freshOther(){return {i:0,done:false,ans:arr(N,function(){return {v:null,u:false,s:false};}),t:arr(N,0),flip:{}};}
+function fresh(){return {v:K.VERSION,fmt:2,me:"",view:"setup",part:null,cur:-1,intro:false,invite:"",
+  self:{i:0,done:false,ans:arr(N,null),ged:arr(NG,null),t:arr(N+NG,0),flip:{}},people:[]};}
+/* Gespeicherter Stand. Ein Stand aus v1.5 mit nur einer Person wird übernommen. */
+function load(){
+  try{
+    var o=JSON.parse(localStorage.getItem(STORE)||"null");
+    if(!o||o.v!==K.VERSION)return null;
+    if(o.fmt===2)return o;
+    var n=fresh();n.me=o.me||"";if(o.self)n.self=o.self;
+    if(o.partner&&o.other)n.people.push({name:o.partner,pron:o.pron||"er",other:o.other});
+    n.view=n.me?"hub":"setup";
+    return n;
+  }catch(e){}
+  return null;
+}
+function codeFor(p){return (S.me&&S.self.done&&p.other.done)?K.buildCode({me:S.me,partner:p.name,self:S.self,other:p.other}):null;}
 function save(){
-  S.code=(S.self.done&&S.other.done&&S.me&&S.partner)?K.buildCode(S):null;
+  S.people.forEach(function(p){p.code=codeFor(p);});
   try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}
 }
+function norm(s){return String(s==null?"":s).trim().replace(/\s+/g," ").toLocaleLowerCase("de");}
+function clean(s){return String(s==null?"":s).trim().replace(/\s+/g," ");}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
 function app(){return document.getElementById("app");}
 function $(id){return document.getElementById(id);}
+function cur(){return S.people[S.cur];}
+function findPerson(name){var k=norm(name);for(var i=0;i<S.people.length;i++)if(norm(S.people[i].name)===k)return i;return -1;}
+
+/* Einladung: index.html?mit=Name. Der Name wird gemerkt und die Adresse aufgeräumt. */
+function takeInvite(){
+  try{
+    var q=new URLSearchParams(location.search).get("mit");
+    if(q){
+      q=clean(q).slice(0,40);
+      if(q&&norm(q)!==norm(S.me)&&findPerson(q)<0){S.invite=q;save();}
+      history.replaceState(null,"",location.pathname+location.hash);
+    }
+  }catch(e){}
+}
+function pageUrl(file,params){
+  var u;
+  try{u=new URL(file,location.href);if(params)Object.keys(params).forEach(function(k){u.searchParams.set(k,params[k]);});return u.href;}
+  catch(e){return file;}
+}
+function inviteUrl(){return pageUrl("index.html",{mit:S.me});}
+function openWhatsApp(text){window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank");}
 
 /* Zeitmessung: Uhr startet bei jeder neuen Karte, beim Verlassen wird aufaddiert. */
 var t0=Date.now(), lastKey=null, moving=false;
@@ -276,8 +320,9 @@ function el(){return Date.now()-t0;}
 function addTime(P,idx){P.t[idx]=(P.t[idx]||0)+el();t0=Date.now();}
 function later(fn){if(moving)return;moving=true;setTimeout(function(){moving=false;fn();},RM?0:260);}
 function flipFor(P,k){if(P.flip[k]===undefined)P.flip[k]=Math.random()<.5?1:0;return P.flip[k];}
+function partObj(){return S.part==="self"?S.self:(cur()?cur().other:null);}
 
-function key(){return S.view+"|"+S.part+"|"+(S.part?S[S.part].i:"")+"|"+(S.intro?1:0);}
+function key(){var P=partObj();return S.view+"|"+S.part+"|"+S.cur+"|"+(S.view==="play"&&P?P.i:"")+"|"+(S.intro?1:0);}
 function frame(night,dealt){
   var k=key(), a=app();
   if(k!==lastKey){
@@ -290,102 +335,150 @@ function frame(night,dealt){
   bar();
 }
 function bar(){
-  var p=$("bar");
-  if(S.view!=="play"){p.innerHTML="";p.classList.remove("on");return;}
-  var P=S[S.part], segs=S.part==="self"?[6,6,6,6,6]:[6,6,6,6], h="", start=0;
+  var p=$("bar"), P=partObj();
+  if(S.view!=="play"||!P){p.innerHTML="";p.classList.remove("on");return;}
+  var segs=S.part==="self"?[6,6,6,6,6]:[6,6,6,6], h="", start=0;
   segs.forEach(function(len){var f=Math.max(0,Math.min(1,(P.i-start)/len));h+='<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';start+=len;});
   p.innerHTML=h;p.classList.add("on");
 }
 function go(){save();render();}
 function render(){
-  if(S.view==="setup"||!S.me||!S.partner||!S.pron)return setup();
-  if(S.view==="play"){
-    var P=S[S.part];
+  if(!S.me||S.view==="setup")return setup();
+  if(S.view==="add")return addPerson();
+  if(S.view==="person"&&cur())return person();
+  if(S.view==="play"&&(S.part==="self"||cur())){
+    var P=partObj();
     if(S.intro)return intro();
     if(S.part==="self")return P.i<N?selfQ():gedQ();
     return otherQ();
   }
   return hub();
 }
+function toHub(){S.view="hub";S.part=null;S.intro=false;go();}
 
-/* ---------- Start: zwei Namen ---------- */
+/* ---------- Start: der eigene Name ---------- */
 function setup(){
   S.view="setup";frame(false,false);
-  var editing=!!(S.me&&S.partner&&S.pron), pron=S.pron;
+  var editing=!!S.me;
   app().innerHTML='<div class="screen">'+
     '<p class="kicker" style="margin-top:34px">Ein Spiel für zwei</p>'+
     '<h1>Entweder<br>oder</h1>'+
+    (S.invite&&!editing?'<p class="flash">'+esc(S.invite)+' hat dich eingeladen.</p>':'')+
     '<div class="formdeck"><div class="formcard">'+
       '<div><label for="me">Ich heiße</label><input id="me" type="text" autocomplete="given-name" autocapitalize="words" placeholder="Vorname" value="'+esc(S.me)+'"></div>'+
-      '<div><label for="partner">und spiele mit</label><input id="partner" type="text" autocomplete="off" autocapitalize="words" placeholder="Vorname" value="'+esc(S.partner)+'"></div>'+
-      '<div><span class="plabel" id="pl">Über die andere Person schreibt die App</span><div class="prow" role="group" aria-labelledby="pl">'+
-        '<button type="button" class="pbtn" data-p="er" aria-pressed="'+(pron==="er")+'">er</button>'+
-        '<button type="button" class="pbtn" data-p="sie" aria-pressed="'+(pron==="sie")+'">sie</button></div></div>'+
+      '<p class="fhint">So tragen dich die anderen in ihrer App ein. Mit deinem Einladungslink passiert das von selbst.</p>'+
     '</div></div>'+
     '<p class="warn" id="warn" role="alert"></p>'+
-    '<p class="lead" style="margin-top:14px">Jeder beantwortet die Fragen zweimal: einmal für sich, einmal für den anderen. Danach setzt ihr euch zusammen und deckt die Karten gemeinsam auf.</p>'+
-    '<p class="lead">Alles bleibt auf diesem Handy, bis du deinen Code verschickst.</p>'+
+    '<p class="lead" style="margin-top:14px">Teil 1 beantwortest du einmal, über dich. Danach spielst du mit so vielen Menschen, wie du magst: Für jede Person gibt es Teil 2 und einen eigenen Code.</p>'+
+    '<p class="lead">Alles bleibt auf diesem Handy, bis du einen Code verschickst.</p>'+
     '<div style="margin-top:auto;padding-top:28px">'+
       '<button class="btn" id="go">'+(editing?"Speichern":"Karten mischen")+'</button>'+
       (editing?'<div class="links" style="justify-content:center;margin-top:10px"><button class="link" id="cancel">Abbrechen</button></div>':'')+
     '</div></div>';
   function submit(){
-    var me=$("me").value.trim().replace(/\s+/g," "), pa=$("partner").value.trim().replace(/\s+/g," "), w=$("warn");
-    if(!me||!pa){w.textContent=!me?"Dein Vorname fehlt noch.":"Der Vorname der anderen Person fehlt noch.";(!me?$("me"):$("partner")).focus();return;}
-    if(!pron){w.textContent="Wähl noch, ob die App über "+pa+" mit er oder sie schreibt.";return;}
-    if(me.toLocaleLowerCase("de")===pa.toLocaleLowerCase("de")){w.textContent="Zwei verschiedene Namen bitte, sonst findet die Auswertung euch nicht.";return;}
-    var changed=editing&&(me!==S.me||pa!==S.partner)&&S.code;
-    S.me=me;S.partner=pa;S.pron=pron;S.view="hub";
-    if(changed)flashMsg="Namen geändert. Falls "+pa+" deinen Code schon hat, schick ihn bitte neu.";
-    go();
+    var me=clean($("me").value), w=$("warn");
+    if(!me){w.textContent="Dein Vorname fehlt noch.";$("me").focus();return;}
+    if(findPerson(me)>=0){w.textContent="So heißt schon eine Person, mit der du spielst. Nimm einen anderen Namen, zum Beispiel mit Initiale.";return;}
+    var hadCodes=S.people.some(function(p){return !!p.code;});
+    if(editing&&me!==S.me&&hadCodes)flashMsg="Dein Name ist geändert. Codes, die du schon verschickt hast, schick bitte neu.";
+    S.me=me;if(norm(S.invite)===norm(me))S.invite="";
+    S.view="hub";go();
   }
-  Array.prototype.forEach.call(app().querySelectorAll(".pbtn"),function(b){
-    b.onclick=function(){pron=b.dataset.p;Array.prototype.forEach.call(app().querySelectorAll(".pbtn"),function(x){x.setAttribute("aria-pressed",String(x===b));});$("warn").textContent="";};
-  });
   $("go").onclick=submit;
-  ["me","partner"].forEach(function(id){$(id).onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();if(id==="me")$("partner").focus();else submit();}};});
+  $("me").onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();submit();}};
   if($("cancel"))$("cancel").onclick=function(){S.view="hub";go();};
 }
 
 /* ---------- Übersicht ---------- */
+function status(P,total){return P.done?"Fertig":P.i>0?"Weiter bei Karte "+(P.i+1)+" von "+total:"Starten";}
 function hub(){
-  S.view="hub";S.part=null;frame(false,false);
-  if(S.self.done&&S.other.done)return done();
-  var s=S.self, o=S.other, pa=esc(S.partner);
-  function status(P,total){return P.done?"Fertig":P.i>0?"Weiter bei Karte "+(P.i+1)+" von "+total:"Starten";}
+  S.view="hub";S.part=null;S.cur=-1;frame(false,false);
+  var s=S.self, inv=S.invite&&findPerson(S.invite)<0&&norm(S.invite)!==norm(S.me)?S.invite:"";
+  var people=S.people.map(function(p,i){
+    var st=!s.done?"Nach Teil 1":p.other.done?"Code bereit":status(p.other,N);
+    return '<button class="part'+(p.other.done?" fin":"")+(!s.done?" wait":"")+'" data-i="'+i+'"><span class="pk">Teil 2</span><span class="pt">Über '+esc(p.name)+'</span>'+
+      '<span class="pm"><span>24 Fragen</span><span class="ps">'+st+'</span></span></button>';
+  }).join("");
   app().innerHTML='<div class="screen">'+
     '<p class="kicker" style="margin-top:34px">Entweder oder</p>'+
     '<h2>Hallo '+esc(S.me)+'</h2>'+
-    '<p class="lead" style="margin-top:8px">Du spielst mit '+pa+'. Zwei Teile, ihr müsst nicht alles an einem Abend machen.</p>'+
     (flashMsg?'<p class="flash" role="status">'+esc(flashMsg)+'</p>':'')+
-    '<div style="margin-top:14px">'+
-      '<button class="part'+(s.done?" fin":"")+'" id="p1"><span class="pk">Teil 1</span><span class="pt">Über dich</span><span class="pm"><span>24 Fragen, 6 Gedankenexperimente</span><span class="ps">'+status(s,N+NG)+'</span></span></button>'+
-      '<button class="part'+(o.done?" fin":"")+'" id="p2"'+(s.done?"":" disabled")+'><span class="pk">Teil 2</span><span class="pt">Über '+pa+'</span><span class="pm"><span>24 Fragen</span><span class="ps">'+(s.done?status(o,N):"Nach Teil 1")+'</span></span></button>'+
-    '</div>'+
-    '<div class="links" style="margin-top:auto;padding-top:28px"><button class="link" id="names">Namen ändern</button><button class="link" id="reset">Alles löschen</button></div>'+
+    (inv?'<div class="invite"><p>'+esc(inv)+' hat dich eingeladen.</p><button class="btn" id="accept">Mit '+esc(inv)+' spielen</button><div class="links" style="margin-top:4px"><button class="link" id="dismiss">Später</button></div></div>':'')+
+    '<button class="part'+(s.done?" fin":"")+'" id="p1"><span class="pk">Teil 1</span><span class="pt">Über dich</span><span class="pm"><span>24 Fragen, 6 Gedankenexperimente</span><span class="ps">'+status(s,N+NG)+'</span></span></button>'+
+    '<p class="plab">Mit wem spielst du?</p>'+
+    (people||'<p class="lead" style="margin-top:6px">Noch niemand. Füg eine Person hinzu oder schick jemandem deinen Einladungslink.</p>')+
+    '<div class="row" style="margin-top:14px"><button class="btn line" id="add">Person hinzufügen</button><button class="btn line" id="invite">Einladen</button></div>'+
+    '<div class="links" style="margin-top:auto;padding-top:28px"><a class="link" href="auswertung.html">Zur Auswertung</a><button class="link" id="names">Meinen Namen ändern</button><button class="link" id="reset">Alles löschen</button></div>'+
     '</div>';
   flashMsg="";
-  $("p1").onclick=function(){if(!s.done)startPart("self");};
-  $("p2").onclick=function(){if(s.done&&!o.done)startPart("other");};
-  wireLinks();
-}
-function wireLinks(){
+  $("p1").onclick=function(){if(!s.done)startPart("self",-1);};
+  Array.prototype.forEach.call(app().querySelectorAll(".part[data-i]"),function(b){
+    b.onclick=function(){
+      var i=+b.dataset.i, p=S.people[i];
+      if(s.done&&!p.other.done)startPart("other",i);
+      else{S.cur=i;S.view="person";go();}
+    };
+  });
+  $("add").onclick=function(){S.addName="";S.view="add";go();};
+  $("invite").onclick=function(){
+    openWhatsApp("Spielst du „Entweder oder“ mit mir? Mit diesem Link steht mein Name schon richtig drin: "+inviteUrl());
+  };
+  if($("accept"))$("accept").onclick=function(){S.addName=inv;S.view="add";go();};
+  if($("dismiss"))$("dismiss").onclick=function(){S.invite="";go();};
   $("names").onclick=function(){S.view="setup";go();};
   $("reset").onclick=function(){
-    if(!confirm("Wirklich alles löschen? Deine Antworten und dein Code sind dann weg."))return;
+    if(!confirm("Wirklich alles löschen? Deine Antworten und alle Codes auf diesem Handy sind dann weg."))return;
     try{localStorage.removeItem(STORE);}catch(e){}S=fresh();lastKey=null;render();
   };
 }
-function startPart(part){
-  S.view="play";S.part=part;var P=S[part];
+function startPart(part,i){
+  S.view="play";S.part=part;S.cur=i;var P=partObj();
   S.intro=(P.i===0)||(part==="self"&&P.i===N);
   go();
 }
-function toHub(){var P=S[S.part];if(!S.intro&&P)addTime(P,P.i);S.view="hub";S.part=null;S.intro=false;go();}
+
+/* ---------- Person hinzufügen ---------- */
+function addPerson(){
+  frame(false,false);
+  var pron="";
+  app().innerHTML='<div class="screen">'+
+    '<p class="kicker" style="margin-top:34px">Neue Person</p>'+
+    '<h2>Mit wem spielst du?</h2>'+
+    '<div class="formdeck"><div class="formcard">'+
+      '<div><label for="pname">Name</label><input id="pname" type="text" autocomplete="off" autocapitalize="words" placeholder="Vorname" value="'+esc(S.addName||"")+'"></div>'+
+      '<p class="fhint">Genau so, wie sich die Person selbst einträgt. Kam die Einladung von ihr, steht der Name schon richtig da.</p>'+
+      '<div><span class="plabel" id="pl">Über diese Person schreibt die App</span><div class="prow" role="group" aria-labelledby="pl">'+
+        '<button type="button" class="pbtn" data-p="er" aria-pressed="false">er</button>'+
+        '<button type="button" class="pbtn" data-p="sie" aria-pressed="false">sie</button></div></div>'+
+    '</div></div>'+
+    '<p class="warn" id="warn" role="alert"></p>'+
+    '<div style="margin-top:auto;padding-top:28px">'+
+      '<button class="btn" id="go">Hinzufügen</button>'+
+      '<div class="links" style="justify-content:center;margin-top:10px"><button class="link" id="cancel">Abbrechen</button></div>'+
+    '</div></div>';
+  Array.prototype.forEach.call(app().querySelectorAll(".pbtn"),function(b){
+    b.onclick=function(){pron=b.dataset.p;Array.prototype.forEach.call(app().querySelectorAll(".pbtn"),function(x){x.setAttribute("aria-pressed",String(x===b));});$("warn").textContent="";};
+  });
+  function submit(){
+    var name=clean($("pname").value), w=$("warn");
+    if(!name){w.textContent="Der Name fehlt noch.";$("pname").focus();return;}
+    if(norm(name)===norm(S.me)){w.textContent="Das ist dein eigener Name.";return;}
+    if(findPerson(name)>=0){w.textContent="Mit "+S.people[findPerson(name)].name+" spielst du schon.";return;}
+    if(!pron){w.textContent="Wähl noch, ob die App über "+name+" mit er oder sie schreibt.";return;}
+    S.people.push({name:name,pron:pron,other:freshOther()});
+    if(norm(S.invite)===norm(name))S.invite="";
+    S.addName="";
+    if(S.self.done)startPart("other",S.people.length-1);
+    else{flashMsg=name+" ist dabei. Sobald Teil 1 fertig ist, geht es mit "+name+" los.";S.view="hub";go();}
+  }
+  $("go").onclick=submit;
+  $("pname").onkeydown=function(e){if(e.key==="Enter"){e.preventDefault();submit();}};
+  $("cancel").onclick=function(){S.addName="";S.view="hub";go();};
+}
 
 /* ---------- Einstiege ---------- */
 function intro(){
-  var P=S[S.part], night=S.part==="self"&&P.i===N, pa=esc(S.partner), head, card, text, btn, backLabel;
+  var P=partObj(), night=S.part==="self"&&P.i===N, p=cur(), pa=p?esc(p.name):"", head, card, text, btn, backLabel;
   if(S.part==="self"&&!night){
     head="Teil 1 · Über dich";
     card='Es geht um dich und die Menschen, die dir nahestehen.';
@@ -400,7 +493,7 @@ function intro(){
     head="Teil 2 · Über "+pa;
     card='Was trifft eher auf '+pa+' zu?';
     text='<p class="lead">Dieselben Situationen, diesmal mit '+pa+' darin. Wähl jeweils die Karte, die eher zu '+pa+' passt.</p>'+
-      '<p class="lead">Wenn du unsicher bist, tipp erst auf „Bin unsicher" und wähle trotzdem eine Karte. „Kann ich nicht beurteilen" geht höchstens '+['null','einmal','zweimal','dreimal','viermal','fünfmal'][K.MAX_SKIP]+'.</p>';
+      '<p class="lead">Wenn du unsicher bist, tipp erst auf „Bin unsicher“ und wähle trotzdem eine Karte. „Kann ich nicht beurteilen“ geht höchstens '+['null','einmal','zweimal','dreimal','viermal','fünfmal'][K.MAX_SKIP]+'.</p>';
     btn="Erste Karte ziehen";backLabel="Übersicht";
   }
   frame(night,true);
@@ -414,7 +507,7 @@ function intro(){
   $("go").onclick=function(){S.intro=false;go();};
   $("back").onclick=function(){
     if(night){S.intro=false;P.i=N-1;go();}
-    else{S.view="hub";S.part=null;S.intro=false;go();}
+    else toHub();
   };
 }
 
@@ -446,7 +539,7 @@ function wireCard(onPick,onBack,onNext){
     };
   });
   $("back").onclick=function(){if(!moving)onBack();};
-  $("pause").onclick=function(){if(!moving)toHub();};
+  $("pause").onclick=function(){if(moving)return;var P=partObj();if(!S.intro&&P)addTime(P,P.i);toHub();};
   if($("next"))$("next").onclick=function(){if(!moving)onNext();};
 }
 
@@ -465,7 +558,10 @@ function gedQ(){
   app().innerHTML=cardHTML({P:P,k:"g"+j,item:g,chosen:P.ged[j],who:"Über dich",label:"Gedankenexperiment",num:(i+1)+" / "+(N+NG),canNext:P.ged[j]!==null});
   function advance(){
     addTime(P,i);P.i++;
-    if(P.i>=N+NG){P.done=true;S.view="hub";S.part=null;flashMsg="Teil 1 geschafft. Jetzt ist "+S.partner+" dran.";}
+    if(P.i>=N+NG){
+      P.done=true;S.view="hub";S.part=null;
+      flashMsg=S.people.length?"Teil 1 geschafft. Jetzt geht es mit Teil 2 weiter.":"Teil 1 geschafft. Füg jetzt eine Person hinzu oder lade jemanden ein.";
+    }
     save();later(render);
   }
   wireCard(function(v){P.ged[j]=v;advance();},
@@ -473,17 +569,18 @@ function gedQ(){
     advance);
 }
 function otherQ(){
-  var P=S.other, i=P.i, it=K.ITEMS[i], a=P.ans[i], pa=esc(S.partner);
+  var p=cur(), P=p.other, i=P.i, it=K.ITEMS[i], a=P.ans[i], pa=esc(p.name);
   var used=P.ans.filter(function(x){return x.s;}).length, canSkip=a.s||used<K.MAX_SKIP;
   frame(false,true);
   var extra='<div class="tools">'+
     '<button class="chip'+(a.u?" on":"")+'" id="uns" aria-pressed="'+a.u+'"'+(a.s?" disabled":"")+'>Bin unsicher</button>'+
     '<button class="chip flag'+(a.s?" on":"")+'" id="skip" aria-pressed="'+a.s+'"'+(canSkip?"":" disabled")+'>'+(a.s?"Doch beantworten":"Kann ich nicht beurteilen")+'</button>'+
     '</div>'+(used>0?'<p class="note">'+used+' von '+K.MAX_SKIP+' offen gelassen</p>':'');
-  app().innerHTML=cardHTML({P:P,k:"f"+i,item:{q:K.fill(it.qo,S.partner,S.pron),a:K.fill(it.ao,S.partner,S.pron),z:K.fill(it.zo,S.partner,S.pron)},ask:"Was trifft eher auf "+pa+" zu?",chosen:a.v,who:"Über "+pa,label:K.BLOCKNAMEN[it.b-1],num:(i+1)+" / "+N,extra:extra,off:a.s,canNext:a.v!==null||a.s});
+  var item={q:K.fill(it.qo,p.name,p.pron),a:K.fill(it.ao,p.name,p.pron),z:K.fill(it.zo,p.name,p.pron)};
+  app().innerHTML=cardHTML({P:P,k:"f"+i,item:item,ask:"Was trifft eher auf "+pa+" zu?",chosen:a.v,who:"Über "+pa,label:K.BLOCKNAMEN[it.b-1],num:(i+1)+" / "+N,extra:extra,off:a.s,canNext:a.v!==null||a.s});
   function advance(){
     addTime(P,i);P.i++;
-    if(P.i>=N){P.done=true;S.view="hub";S.part=null;}
+    if(P.i>=N){P.done=true;S.view="person";S.part=null;flashMsg="Geschafft. Jetzt kann "+p.name+" deinen Code bekommen.";}
     save();later(render);
   }
   wireCard(function(v){a.v=v;a.s=false;advance();},
@@ -499,27 +596,38 @@ function otherQ(){
   };
 }
 
-/* ---------- Fertig: Projektion und Code ---------- */
-function done(){
-  save();
-  var pa=esc(S.partner), pr=K.projection(S), code=S.code;
-  var url;try{url=new URL("auswertung.html",location.href).href;}catch(e){url="auswertung.html";}
-  app().innerHTML='<div class="screen">'+
-    '<p class="kicker" style="margin-top:34px">Beide Teile fertig</p>'+
-    '<h2>Dein Code für '+pa+'</h2>'+
-    (flashMsg?'<p class="flash" role="status">'+esc(flashMsg)+'</p>':'')+
-    '<div class="codecard"><p class="for">Von '+esc(S.me)+' für '+pa+'</p><div class="code" id="code">'+esc(code)+'</div></div>'+
-    '<button class="btn" id="wa">Per WhatsApp schicken</button>'+
-    '<div class="row" style="margin-top:10px"><button class="btn line" id="copy">Kopieren</button><button class="btn line" id="dl">Als Datei</button></div>'+
-    (pr?'<hr class="rule"><p class="stat">'+pr.prozent+'%</p>'+
-      '<p class="lead">So oft hast du bei '+pa+' dasselbe gewählt wie bei dir selbst, bei '+pr.gleich+' von '+pr.gesamt+' Fragen.</p>'+
-      '<p class="lead">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen ein Stück weit sich selbst. Das passiert jedem, und wer sich ähnlich ist, liegt damit oft sogar richtig.</p>':'')+
-    '<hr class="rule">'+
-    '<p class="lead">Wenn der Code von '+pa+' da ist, setzt euch zusammen und deckt auf.</p>'+
-    '<a class="btn line" style="margin-top:14px" href="auswertung.html">Zur Auswertung</a>'+
-    '<div class="links" style="padding-top:18px"><button class="link" id="names">Namen ändern</button><button class="link" id="reset">Alles löschen</button></div>'+
+/* ---------- Eine Person: Code, Projektion, Entfernen ---------- */
+function person(){
+  S.view="person";frame(false,false);
+  var p=cur(), pa=esc(p.name), code=p.code;
+  var head;
+  if(code){
+    var pr=K.projection({self:S.self,other:p.other});
+    head='<p class="kicker" style="margin-top:34px">Teil 2 fertig</p><h2>Dein Code für '+pa+'</h2>'+
+      (flashMsg?'<p class="flash" role="status">'+esc(flashMsg)+'</p>':'')+
+      '<p class="privacy">Wer diesen Code hat, kann alle deine Antworten lesen: über dich, über '+pa+' und die Gedankenexperimente. Schick ihn nur an Menschen, die das sehen dürfen.</p>'+
+      '<div class="codecard"><p class="for">Von '+esc(S.me)+' für '+pa+'</p><div class="code" id="code">'+esc(code)+'</div></div>'+
+      '<button class="btn" id="wa">Per WhatsApp schicken</button>'+
+      '<div class="row" style="margin-top:10px"><button class="btn line" id="copy">Kopieren</button><button class="btn line" id="dl">Als Datei</button></div>'+
+      (pr?'<hr class="rule"><p class="stat">'+pr.prozent+'%</p>'+
+        '<p class="lead">So oft hast du bei '+pa+' dasselbe gewählt wie bei dir selbst, bei '+pr.gleich+' von '+pr.gesamt+' Fragen.</p>'+
+        '<p class="lead">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen ein Stück weit sich selbst. Das passiert jedem, und wer sich ähnlich ist, liegt damit oft sogar richtig.</p>':'')+
+      '<hr class="rule"><p class="lead">Wenn der Code von '+pa+' da ist, setzt euch zusammen und deckt auf.</p>'+
+      '<a class="btn line" style="margin-top:14px" href="auswertung.html">Zur Auswertung</a>';
+  }else{
+    head='<p class="kicker" style="margin-top:34px">Teil 2</p><h2>Über '+pa+'</h2>'+
+      '<p class="lead" style="margin-top:10px">'+(S.self.done?'Teil 2 über '+pa+' ist noch nicht fertig.':'Sobald Teil 1 über dich fertig ist, geht es hier los.')+'</p>';
+  }
+  app().innerHTML='<div class="screen">'+head+
+    '<div class="links" style="margin-top:auto;padding-top:24px"><button class="link" id="home">Zur Übersicht</button><button class="link" id="remove">'+pa+' entfernen</button></div>'+
     '</div>';
   flashMsg="";
+  $("home").onclick=toHub;
+  $("remove").onclick=function(){
+    if(!confirm(p.name+" und deine Antworten über "+p.name+" entfernen? Ein Code, den du schon verschickt hast, bleibt beim Empfänger gültig."))return;
+    S.people.splice(S.cur,1);toHub();
+  };
+  if(!code)return;
   $("copy").onclick=function(){
     var b=$("copy");
     function sel(){var r=document.createRange();r.selectNodeContents($("code"));var s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Markiert";}
@@ -527,14 +635,13 @@ function done(){
     setTimeout(function(){b.textContent="Kopieren";},2500);
   };
   $("wa").onclick=function(){
-    var txt="Entweder Oder: mein Code für dich, "+S.partner+".\n\n"+code+"\n\nZum Auswerten: "+url;
-    window.open("https://wa.me/?text="+encodeURIComponent(txt),"_blank");
+    openWhatsApp("Entweder oder: mein Code für dich, "+p.name+".\n\n"+code+"\n\nZum Aufdecken: "+pageUrl("auswertung.html")+
+      "\n\nNoch nicht mitgespielt? Mit diesem Link steht mein Name schon richtig drin: "+inviteUrl());
   };
   $("dl").onclick=function(){
-    var safe=(S.me+"-fuer-"+S.partner).replace(/[^a-zA-Z0-9äöüÄÖÜß-]+/g,"_");
+    var safe=(S.me+"-fuer-"+p.name).replace(/[^a-zA-Z0-9äöüÄÖÜß-]+/g,"_");
     var a=document.createElement("a");a.href="data:text/plain;charset=utf-8,"+encodeURIComponent(code);a.download="entweder-oder_"+safe+".txt";a.click();
   };
-  wireLinks();
 }
 
 /* Tastatur am Laptop: 1/2 oder Pfeile für die Karten, Enter für Weiter */
