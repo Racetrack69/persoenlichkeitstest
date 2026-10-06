@@ -1,9 +1,9 @@
-/* PT14-Decoder, Bereich 2. Liest einen Code aus index.html v1.4 (ein Code pro Person).
+/* PT15-Decoder, Bereich 2. Liest einen Code aus index.html v1.5 (ein Code pro Person).
    Nach code-format.md geschrieben, unabhängig vom Encoder. Läuft in Node und im Browser. */
 (function(root){
 "use strict";
-var PREFIX="PT14", N=33, NG=8, BYTES=36;
-var BLOCK_OF=[];for(var i=0;i<N;i++)BLOCK_OF.push(i<8?1:i<16?2:i<27?3:4);
+var PREFIX="PT15", N=24, NG=6, BYTES=27, PAD=6;
+var BLOCK_OF=[];for(var i=0;i<N;i++)BLOCK_OF.push(i<6?1:i<12?2:i<18?3:4);
 var ANSWER=["A","B","A (unsicher)","B (unsicher)","kann nicht beurteilen"];
 var TIME=["unter 2 s","2 bis 5 s","5 bis 15 s","ab 15 s"];
 
@@ -55,12 +55,13 @@ function decode(code){
   out.self.items.forEach(function(it){it.timeLabel=TIME[it.time];});
   out.self.gedanken.forEach(function(it){it.timeLabel=TIME[it.time];});
   out.other.items.forEach(function(it){it.timeLabel=TIME[it.time];});
-  if(out.other.skipped>5)out.warnings.push(out.other.skipped+" Mal „kann nicht beurteilen“, Limit ist 5");
+  if(r.read(PAD)!==0)out.warnings.push("Füllbits nicht 0");
+  if(out.other.skipped>4)out.warnings.push(out.other.skipped+" Mal „kann nicht beurteilen“, Limit ist 4");
   return out;
 }
 
 function toText(d){
-  var L=["PT14 · von: "+d.name+" · über: "+d.partner];
+  var L=["PT15 · von: "+d.name+" · über: "+d.partner];
   L.push("Nr  Block  über sich        über "+d.partner);
   for(var i=0;i<N;i++){
     var s=d.self.items[i],o=d.other.items[i];
@@ -71,8 +72,8 @@ function toText(d){
   return L.join("\n");
 }
 
-/* Findet alle PT14-Codes in beliebigem Text, etwa in kopierten WhatsApp-Nachrichten. */
-function findCodes(text){return String(text).match(/PT14\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
+/* Findet alle PT15-Codes in beliebigem Text, etwa in kopierten WhatsApp-Nachrichten. */
+function findCodes(text){return String(text).match(/PT15\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
 function decodeAll(text){
   return findCodes(text).map(function(c){
     try{return {ok:true,code:c,data:decode(c)};}catch(e){return {ok:false,code:c,error:e.message};}
@@ -80,5 +81,5 @@ function decodeAll(text){
 }
 
 var api={PREFIX:PREFIX,decode:decode,decodeAll:decodeAll,findCodes:findCodes,toText:toText};
-if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT14=api;
+if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT15=api;
 })(typeof window!=="undefined"?window:this);

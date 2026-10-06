@@ -20,8 +20,14 @@ check("Version, Blocknamen und Texte gleich index.html",function(){
   eq(A.VERSION,K.VERSION,"Version");
   eq(JSON.stringify(A.BLOCKNAMEN),JSON.stringify(K.BLOCKNAMEN),"Blocknamen");
   eq(A.ITEMS.length,K.ITEMS.length,"Anzahl Items");eq(A.GEDANKEN.length,K.GEDANKEN.length,"Anzahl Gedanken");
-  K.ITEMS.forEach(function(it,i){["b","q","a","z"].forEach(function(f){eq(A.ITEMS[i][f],it[f],"Item "+(i+1)+" "+f);});});
-  K.GEDANKEN.forEach(function(g,i){["q","a","z"].forEach(function(f){eq(A.GEDANKEN[i][f],g[f],"G"+(i+1)+" "+f);});});
+  K.ITEMS.forEach(function(it,i){["b","t","qs","qo","a","z","ao","zo","g"].forEach(function(f){eq(A.ITEMS[i][f],it[f],"Item "+(i+1)+" "+f);});});
+  K.GEDANKEN.forEach(function(g,i){["t","q","a","z","g"].forEach(function(f){eq(A.GEDANKEN[i][f],g[f],"G"+(i+1)+" "+f);});});
+  /* Name und Pronomen: kein Platzhalter darf übrig bleiben, Ich- und Du-Fassung haben keine */
+  K.ITEMS.forEach(function(it,i){
+    ["qo","ao","zo"].forEach(function(f){["er","sie"].forEach(function(p){var t=K.fill(it[f],"Lea",p);if(/[{}]/.test(t))throw new Error("Platzhalter übrig in "+(i+1)+" "+f+" ("+p+"): "+t);});});
+    ["qs","a","z","g"].forEach(function(f){if(/[{}]/.test(it[f]))throw new Error("Platzhalter in "+(i+1)+" "+f);});
+    if(it.qo.indexOf("{n}")<0)throw new Error("Frage "+(i+1)+" über die andere Person ohne Namen");
+  });
 });
 
 function bit(){return Math.random()<.5?0:1;}
@@ -29,7 +35,7 @@ function person(me,partner){
   var skips=0,S={me:me,partner:partner,self:{ans:[],ged:[],t:[]},other:{ans:[],t:[]}};
   for(var i=0;i<K.N;i++){
     S.self.ans.push(bit());S.self.t.push(3000);S.other.t.push(3000);
-    if(Math.random()<.1&&skips<5){skips++;S.other.ans.push({v:null,u:false,s:true});}
+    if(Math.random()<.1&&skips<K.MAX_SKIP){skips++;S.other.ans.push({v:null,u:false,s:true});}
     else S.other.ans.push({v:bit(),u:Math.random()<.3,s:false});
   }
   for(var j=0;j<K.NG;j++){S.self.ged.push(bit());S.self.t.push(3000);}
@@ -60,14 +66,14 @@ check("1000 Paare: Paarfindung, Treffer, Blöcke, Highlights, Projektion, Gleich
         if(a.s)E.o++;else{E.g++;if(a.v===s)E.t++;if(!a.u&&a.v!==s)sd++;if(a.u&&a.v===s)ur++;}
       }
       exp.forEach(function(E,b){eq(v.bloecke[b].treffer,E.t,"Block "+(b+1)+" Treffer");eq(v.bloecke[b].gezaehlt,E.g,"Block "+(b+1)+" gezählt");eq(v.bloecke[b].offen,E.o,"Block "+(b+1)+" offen");});
-      eq(v.bloecke.reduce(function(s,B){return s+B.gezaehlt+B.offen;},0),33,"33 Fragen gezählt");
+      eq(v.bloecke.reduce(function(s,B){return s+B.gezaehlt+B.offen;},0),K.N,"alle Fragen gezählt");
       var h=A.highlights(v);eq(h.sicherDaneben.length,sd,"sicher daneben");eq(h.unsicherRichtig.length,ur,"unsicher richtig");
     });
     var prA=A.projektion(p.a),kA=K.projection(SA);eq(prA.prozent,kA.prozent,"Projektion A wie App");eq(prA.gesamt,kA.gesamt,"Projektion A Nenner");
     var prB=A.projektion(p.b),kB=K.projection(SB);eq(prB.prozent,kB.prozent,"Projektion B wie App");
     var g=A.gleichheit(p.a,p.b),same=0;for(var i=0;i<K.N;i++)if(SA.self.ans[i]===SB.self.ans[i])same++;
     eq(g.reduce(function(s,B){return s+B.gleich;},0),same,"Gleichheit");
-    eq(g.map(function(B){return B.gesamt;}).join(","),"8,8,11,6","Blockgrößen");
+    eq(g.map(function(B){return B.gesamt;}).join(","),"6,6,6,6","Blockgrößen");
     var bd=A.beideDaneben(vA,vB),bdExp=0;for(var k=0;k<K.N;k++)if(vA.items[k].treffer===false&&vB.items[k].treffer===false)bdExp++;eq(bd.length,bdExp,"beide daneben");
     for(var j=0;j<K.NG;j++){eq(p.a.self.gedanken[j].value,SA.self.ged[j],"G A "+j);eq(p.b.self.gedanken[j].value,SB.self.ged[j],"G B "+j);}
   }

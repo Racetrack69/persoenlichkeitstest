@@ -1,20 +1,20 @@
-# Code-Format PT14
+# Code-Format PT15
 
-Stand: 05.10.2026 · Itemliste v1.4 · Bereich 2 besitzt diese Datei.
+Stand: 06.10.2026 · Itemliste v1.5 · Bereich 2 besitzt diese Datei. Aufbau wie PT14, nur mit 24 Fragen und 6 Gedankenexperimenten.
 
 Ein Code pro Person. Er entsteht erst, wenn beide Teile fertig sind: der Teil über sich selbst und der Teil über die andere Person. Codes verschiedener Präfixe werden nie gemischt.
 
 ## Aufbau
 
 ```
-PT14 . <Header> . <Nutzdaten>
+PT15 . <Header> . <Nutzdaten>
 ```
 
 | Teil | Inhalt |
 |---|---|
-| `PT14` | Versionspräfix |
+| `PT15` | Versionspräfix |
 | Header | JSON, UTF-8, Base64url ohne Padding |
-| Nutzdaten | 288 Bit = 36 Byte, Base64url ohne Padding (48 Zeichen) |
+| Nutzdaten | 210 Bit, 27 Byte, Base64url ohne Padding (36 Zeichen) |
 
 Base64url: `+` wird `-`, `/` wird `_`, `=` am Ende entfällt. Namen stehen nur kodiert, nicht verschlüsselt.
 
@@ -29,19 +29,20 @@ Base64url: `+` wird `-`, `/` wird `_`, `=` am Ende entfällt. Namen stehen nur k
 | `n` | Name der Person, die den Code erzeugt hat |
 | `p` | Name der anderen Person, wie `n` ihn eingetippt hat |
 
-Die Auswertung prüft über Kreuz: `n` des einen Codes gleich `p` des anderen, tolerant gegenüber Leerzeichen sowie Groß- und Kleinschreibung.
+Das gewählte Pronomen (er/sie) steht nicht im Code, es betrifft nur die Anzeige auf dem eigenen Handy. Die Auswertung prüft über Kreuz: `n` des einen Codes gleich `p` des anderen, tolerant gegenüber Leerzeichen sowie Groß- und Kleinschreibung.
 
 ## Nutzdaten
 
-Bits in Reihenfolge, höchstwertiges Bit zuerst (MSB first), in 8er-Gruppen zu Bytes gepackt. 288 Bit füllen 36 Byte genau, es gibt keine Füllbits.
+Bits in Reihenfolge, höchstwertiges Bit zuerst (MSB first), in 8er-Gruppen zu Bytes gepackt. Die letzten 6 Bit sind Füllbits (0).
 
 | Bit | Inhalt |
 |---|---|
-| 0–32 | Selbstteil: 33 Antworten, je 1 Bit |
-| 33–40 | Gedankenexperimente G1–G8, je 1 Bit |
-| 41–139 | Teil über die andere Person: 33 Antworten, je 3 Bit |
-| 140–221 | Zeitklassen Selbstteil: 41 × 2 Bit, erst 33 Fragen, dann 8 Gedanken |
-| 222–287 | Zeitklassen Teil über die andere Person: 33 × 2 Bit |
+| 0–23 | Selbstteil: 24 Antworten, je 1 Bit |
+| 24–29 | Gedankenexperimente G1–G6, je 1 Bit |
+| 30–101 | Teil über die andere Person: 24 Antworten, je 3 Bit |
+| 102–161 | Zeitklassen Selbstteil: 30 × 2 Bit, erst 24 Fragen, dann 6 Gedanken |
+| 162–209 | Zeitklassen Teil über die andere Person: 24 × 2 Bit |
+| 210–215 | Füllbits (0) |
 
 **Antwort, 1 Bit:** `0` = Option A, `1` = Option B, wie in der Itemliste. Die zufällige Reihenfolge der Karten auf dem Bildschirm hat keinen Einfluss.
 
@@ -60,14 +61,14 @@ Bits in Reihenfolge, höchstwertiges Bit zuerst (MSB first), in 8er-Gruppen zu B
 
 | Index | Block |
 |---|---|
-| 0–7 | 1 Alltag |
-| 8–15 | 2 Unter Druck |
-| 16–26 | 3 Nähe und Rückzug |
-| 27–32 | 4 Das große Ganze |
+| 0–5 | 1 Alltag miteinander |
+| 6–11 | 2 Wenn es schwierig wird |
+| 12–17 | 3 Was du brauchst |
+| 18–23 | 4 Wie du durchs Leben gehst |
 
-Index = Nummer in der Itemliste minus 1. Es gibt kein Kontroll-Item mehr.
+Index = Nummer in der Itemliste minus 1.
 
 ## Grenzen
 
-- Das Limit von 5 Mal „kann ich nicht beurteilen" setzt nur die Oberfläche durch. Der Decoder warnt bei mehr.
+- Das Limit von 4 Mal „kann ich nicht beurteilen" setzt nur die Oberfläche durch. Der Decoder warnt bei mehr.
 - Im Selbstteil ist „unbeantwortet" nicht von Option A unterscheidbar. Die App lässt keinen Code ohne alle Antworten entstehen.

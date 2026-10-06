@@ -1,4 +1,4 @@
-/* Round-Trip PT14: führt den Kern aus index.html in einer Node-VM aus, erzeugt mit dem echten
+/* Round-Trip PT15: führt den Kern aus index.html in einer Node-VM aus, erzeugt mit dem echten
    buildCode() Zufallsdatensätze und prüft sie gegen decoder.js. Aufruf: node roundtrip.js index.html */
 "use strict";
 var fs=require("fs"),vm=require("vm"),path=require("path");
@@ -8,7 +8,7 @@ if(!m)throw new Error("Kern-Script in index.html nicht gefunden");
 var ctx={btoa:btoa,TextEncoder:TextEncoder,JSON:JSON,Math:Math,String:String};
 vm.createContext(ctx);vm.runInContext(m[1],ctx);
 var K=ctx.EOK, D=require("./decoder.js");
-if(K.VERSION!=="v1.4"||K.PREFIX!=="PT14")throw new Error("index.html ist nicht v1.4/PT14");
+if(K.VERSION!=="v1.5"||K.PREFIX!=="PT15")throw new Error("index.html ist nicht v1.5/PT15");
 
 var TIMES=[0,1999,2000,4999,5000,14999,15000,60000];
 var NAMES=["Anna","Jörg","Zoë","O'Neil","Maria-Luise","Ömer","Björn Bo","李"];
@@ -19,7 +19,7 @@ function state(){
   var skips=0,S={me:pick(NAMES),partner:pick(NAMES),self:{ans:[],ged:[],t:[]},other:{ans:[],t:[]}};
   for(var i=0;i<K.N;i++){
     S.self.ans.push(bit());S.self.t.push(pick(TIMES));S.other.t.push(pick(TIMES));
-    if(Math.random()<.12&&skips<5){skips++;S.other.ans.push({v:null,u:false,s:true});}
+    if(Math.random()<.12&&skips<K.MAX_SKIP){skips++;S.other.ans.push({v:null,u:false,s:true});}
     else S.other.ans.push({v:bit(),u:Math.random()<.3,s:false});
   }
   for(var j=0;j<K.NG;j++){S.self.ged.push(bit());S.self.t.push(pick(TIMES));}
@@ -47,7 +47,7 @@ for(var n=0;n<3000;n++){
 }
 console.log("Round-Trip: "+ok+" Codes ok, "+fails+" Fehler");
 
-var bad=[["PT13.e30.AAAA","Präfix"],["PT14.e30","Teile"],[sample.slice(0,-4),"Byte"],[sample+"AAAA","Byte"],["PT14.e30."+sample.split(".")[2],"Header"]];
+var bad=[["PT14.e30.AAAA","Präfix"],["PT15.e30","Teile"],[sample.slice(0,-4),"Byte"],[sample+"AAAA","Byte"],["PT15.e30."+sample.split(".")[2],"Header"]];
 bad.forEach(function(b){try{D.decode(b[0]);console.error("Negativfall nicht erkannt: "+b[1]);fails++;}
   catch(e){if(e.message.indexOf(b[1])<0){console.error("Falsche Meldung für "+b[1]+": "+e.message);fails++;}}});
 var wa="[05.10., 20:14] Ben: Entweder Oder: mein Code für dich, Anna.\n\n"+sample+"\n\nZum Auswerten: https://example.org/auswertung.html";
