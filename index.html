@@ -158,6 +158,9 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
   .oder{padding:5px 0}
   .tools{margin-top:12px}
   .foot{min-height:44px;padding-top:4px}
+  .str{padding-top:8px}
+  .sbtn{min-height:40px;padding:6px 14px;font-size:16px}
+  .shint{font-size:15px}
 }
 .flash{margin:18px 0 0;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--accent)}
 .plab{margin:28px 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
@@ -168,6 +171,12 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 .part.wait{background:none;color:var(--on-mute);border:1.5px dashed var(--on-line);box-shadow:none}
 .part.wait .pk,.part.wait .pm{color:var(--on-mute)}
 .part.wait .ps{color:var(--on-mute);font-weight:500}
+.str{display:none;align-items:center;justify-content:flex-end;gap:8px;padding:12px 2px 2px}
+.str.on{display:flex;animation:fadeIn .2s ease both}
+.shint{margin-right:auto;font-family:var(--serif);font-style:italic;font-size:16px;color:var(--on-soft)}
+.sbtn{appearance:none;min-width:64px;min-height:44px;padding:8px 18px;border:1.5px solid var(--sand);border-radius:999px;background:none;color:var(--on);font-family:var(--serif);font-size:18px;cursor:pointer}
+.sbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+@media(hover:hover){.sbtn:hover{border-color:var(--accent)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
@@ -180,37 +189,38 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 /* ===== Kern (Daten und Code). Kein DOM, damit roundtrip.js ihn unter Node prüfen kann. ===== */
 (function(root){
 "use strict";
-var VERSION="v1.5", PREFIX="PT15";
-var BLOCKNAMEN=["Alltag miteinander", "Wenn es schwierig wird", "Was du brauchst", "Wie du durchs Leben gehst"];
-/* Itemliste v1.5. Quelle: fragen.json bzw. persoenlichkeitstest-v1.5.md (Bereich 1). Beide Seiten tragen denselben Block,
-   der Round-Trip prüft die Gleichheit.
-   Felder: qs = Frage an dich, qo = Frage über die andere Person ({n} = Name), a/z = Antworten in Ich-Form,
-   ao/zo = dieselben Antworten über die andere Person ({Er} {er} {ihn} {ihm} {sein} = Pronomen), g = Gesprächsfrage. */
+var VERSION="v1.6", PREFIX="PT16";
+/* Karten v1.6. Quelle: fragen.json, eingesetzt von build.py zwischen DATEN-ANFANG und DATEN-ENDE. Nicht von Hand ändern.
+   Felder: t = Titel, qs = Frage an dich, qo = Frage über die andere Person ({n} = Name), a/z = Antworten A/B in Ich-Form,
+   ao/zo = dieselben Antworten über die andere Person ({Er} {er} {ihn} {ihm} {sein} = Pronomen), g = Gesprächsfrage.
+   Antwortstufen: 0 ganz klar A, 1 eher A, 2 eher B, 3 ganz klar B. */
+/* DATEN-ANFANG */
+var RUNDEN=[6, 6, 6, 6];
 var ITEMS=[
- {"b": 1, "t": "Freies Wochenende", "qs": "Ein freies Wochenende liegt vor dir. Noch ist nichts geplant.", "qo": "Ein freies Wochenende liegt vor {n}. Noch ist nichts geplant.", "a": "Herrlich. Ich lasse es auf mich zukommen und schaue, worauf ich Lust habe.", "z": "Ich plane gern etwas. Wenn ich weiß, was kommt, kann ich mich darauf freuen.", "ao": "Herrlich. {Er} lässt es auf sich zukommen und schaut, worauf {er} Lust hat.", "zo": "{Er} plant gern etwas. Wenn {er} weiß, was kommt, kann {er} sich darauf freuen.", "g": "Wie sieht für jeden von euch ein richtig gutes freies Wochenende aus?"},
- {"b": 1, "t": "Viertel nach sieben", "qs": "Du bist um 19 Uhr verabredet. Es ist 19:15, die andere Person ist noch nicht da, und es kam keine Nachricht.", "qo": "{n} ist um 19 Uhr verabredet. Es ist 19:15, die andere Person ist noch nicht da, und es kam keine Nachricht.", "a": "Kein Problem. Eine Viertelstunde ist für mich noch pünktlich.", "z": "Das macht mich unruhig. Eine kurze Nachricht hätte ich gern gehabt.", "ao": "Kein Problem. Eine Viertelstunde ist für {ihn} noch pünktlich.", "zo": "Das macht {ihn} unruhig. Eine kurze Nachricht hätte {er} gern gehabt.", "g": "Ab wann ist es für dich zu spät, und wann ist eine Nachricht fällig?"},
- {"b": 1, "t": "Kontakt aus der Ferne", "qs": "Ein Mensch, der dir nahesteht, zieht weit weg. Wie viel Kontakt brauchst du, damit ihr euch nah bleibt?", "qo": "Ein Mensch, der {n} nahesteht, zieht weit weg. Wie viel Kontakt braucht {n}, damit die beiden sich nah bleiben?", "a": "Regelmäßig etwas. Ein kurzes Lebenszeichen alle paar Tage hält uns zusammen.", "z": "Nicht viel. Wir können Wochen nichts hören, und beim nächsten Mal ist alles wie immer.", "ao": "Regelmäßig etwas. Ein kurzes Lebenszeichen alle paar Tage hält die beiden zusammen.", "zo": "Nicht viel. Die beiden können Wochen nichts hören, und beim nächsten Mal ist alles wie immer.", "g": "Wie oft wollt ihr voneinander hören, wenn ihr euch länger nicht seht?"},
- {"b": 1, "t": "Der freie Abend", "qs": "Nach einer anstrengenden Woche hast du endlich einen freien Abend. Ein Mensch, der dir nahesteht, hat auch Zeit.", "qo": "Nach einer anstrengenden Woche hat {n} endlich einen freien Abend. Ein Mensch, der {n} nahesteht, hat auch Zeit.", "a": "Den verbringe ich gern zusammen. Gemeinsame Zeit lädt mich auf.", "z": "Ich brauche erst ein bisschen Zeit für mich. Danach bin ich wieder ganz da.", "ao": "Den verbringt {er} gern zusammen. Gemeinsame Zeit lädt {ihn} auf.", "zo": "{Er} braucht erst ein bisschen Zeit für sich. Danach ist {er} wieder ganz da.", "g": "Woran merkt der andere, dass du Zeit für dich brauchst, und nicht, dass etwas nicht stimmt?"},
- {"b": 1, "t": "Etwas klären", "qs": "Dich beschäftigt etwas, das du mit einem nahestehenden Menschen klären willst.", "qo": "Etwas beschäftigt {n} und soll mit einem nahestehenden Menschen geklärt werden.", "a": "Ich schreibe es lieber. So kann ich in Ruhe sagen, was ich meine.", "z": "Ich spreche es lieber direkt an. Schriftlich kommt zu viel falsch an.", "ao": "{Er} schreibt es lieber. So kann {er} in Ruhe sagen, was {er} meint.", "zo": "{Er} spricht es lieber direkt an. Schriftlich kommt zu viel falsch an.", "g": "Wie wollt ihr Wichtiges künftig miteinander ansprechen?"},
- {"b": 1, "t": "Der Ausflug", "qs": "Jemand, der dir nahesteht, plant einen gemeinsamen Ausflug für euch.", "qo": "Jemand, der {n} nahesteht, plant einen gemeinsamen Ausflug.", "a": "Verrat mir nichts. Ich lasse mich gern überraschen.", "z": "Sag mir vorher, was wir machen. Dann kann ich mich darauf einstellen.", "ao": "Bloß nichts verraten. {Er} lässt sich gern überraschen.", "zo": "{Er} möchte vorher wissen, was geplant ist. Dann kann {er} sich darauf einstellen.", "g": "Welche Überraschung hat dir richtig gefallen, und welche eher nicht?"},
- {"b": 2, "t": "Der Plan platzt", "qs": "Ein gemeinsamer Plan platzt kurzfristig. Der Zug fällt aus, oder das Restaurant hat doch zu.", "qo": "Ein Plan, den {n} mit jemandem hat, platzt kurzfristig. Der Zug fällt aus, oder das Restaurant hat doch zu.", "a": "Ich suche sofort nach einer Lösung. Ich will das schnell im Griff haben.", "z": "Ich atme erst mal durch. Dann schauen wir in Ruhe.", "ao": "{Er} sucht sofort nach einer Lösung. {Er} will das schnell im Griff haben.", "zo": "{Er} atmet erst mal durch und sucht dann in Ruhe nach einem Weg.", "g": "Was hilft dir, wenn der andere in so einem Moment ganz anders reagiert?"},
- {"b": 2, "t": "Eine Sorge", "qs": "Dich beschäftigt eine Sorge, etwa um deine Gesundheit, die Arbeit oder einen Menschen.", "qo": "{n} macht sich Sorgen, etwa um die Gesundheit, die Arbeit oder einen Menschen.", "a": "Ich erzähle früh davon. Geteilt wiegt es weniger.", "z": "Ich erzähle erst davon, wenn ich selbst klarer sehe.", "ao": "{Er} erzählt früh davon. Geteilt wiegt es für {ihn} weniger.", "zo": "{Er} erzählt erst davon, wenn {er} selbst klarer sieht.", "g": "Woran würdest du merken, dass mich gerade etwas beschäftigt?"},
- {"b": 2, "t": "Im Streit", "qs": "Du streitest mit einem nahestehenden Menschen über etwas, das dir wirklich wichtig ist.", "qo": "{n} streitet mit einem nahestehenden Menschen über etwas, das wirklich wichtig ist.", "a": "Ich sage alles, was mich stört. Dann liegt es wenigstens auf dem Tisch.", "z": "Manches behalte ich bewusst für mich. Nicht alles muss im Streit gesagt werden.", "ao": "{Er} sagt alles, was {ihn} stört. Dann liegt es wenigstens auf dem Tisch.", "zo": "Manches behält {er} bewusst für sich. Nicht alles muss im Streit gesagt werden.", "g": "Gibt es Dinge, die im Streit besser ungesagt bleiben? Wer entscheidet das?"},
- {"b": 2, "t": "Nach dem Streit", "qs": "Ein Streit ist vorbei, aber die Stimmung hängt noch in der Luft.", "qo": "{n} hatte Streit. Der ist vorbei, aber die Stimmung hängt noch in der Luft.", "a": "Ich will es bald klären. Ungeklärtes liegt mir schwer im Magen.", "z": "Ich brauche erst Abstand. Mit etwas Ruhe rede ich besser.", "ao": "{Er} will es bald klären. Ungeklärtes liegt {ihm} schwer im Magen.", "zo": "{Er} braucht erst Abstand. Mit etwas Ruhe redet {er} besser.", "g": "Wie lange ist Abstand gut, bevor er sich wie Schweigen anfühlt?"},
- {"b": 2, "t": "Kritik", "qs": "Ein Mensch, der dir wichtig ist, kritisiert dich, und es trifft.", "qo": "{n} wird von einem Menschen kritisiert, der wichtig ist, und es trifft.", "a": "Man sieht es mir sofort an. Verbergen kann ich das schlecht.", "z": "Ich wirke erst mal ruhig. Was es mit mir macht, merke ich oft später.", "ao": "Man sieht es {ihm} sofort an. Verbergen kann {er} das schlecht.", "zo": "{Er} wirkt erst mal ruhig. Was es mit {ihm} macht, merkt {er} oft später.", "g": "Wie muss Kritik klingen, damit sie bei dir ankommt?"},
- {"b": 2, "t": "Falsch gelegen", "qs": "Mitten in einer Diskussion merkst du: Du lagst falsch.", "qo": "Mitten in einer Diskussion stellt sich heraus: {n} lag falsch.", "a": "Ich gebe es kurz zu, und das Thema ist erledigt.", "z": "Ich gebe es zu und erkläre, wie ich darauf gekommen bin.", "ao": "{Er} gibt es kurz zu, und das Thema ist erledigt.", "zo": "{Er} gibt es zu und erklärt, wie {er} darauf gekommen ist.", "g": "Was macht es leichter, vor dem anderen einen Fehler zuzugeben?"},
- {"b": 3, "t": "Ein schlechter Tag", "qs": "Du hattest einen richtig schlechten Tag. Abends ist ein vertrauter Mensch da.", "qo": "{n} hatte einen richtig schlechten Tag. Abends ist ein vertrauter Mensch da.", "a": "Ich will erzählen, was los war. Reden hilft mir.", "z": "Ich brauche erst mal Ruhe. Erzählen kann ich später.", "ao": "{Er} will erzählen, was los war. Reden hilft {ihm}.", "zo": "{Er} braucht erst mal Ruhe. Erzählen kann {er} später.", "g": "Woran merkst du, was ich in so einem Moment brauche?"},
- {"b": 3, "t": "Zuhören oder helfen", "qs": "Dich bedrückt ein Problem, und du erzählst einem nahestehenden Menschen davon.", "qo": "Ein Problem bedrückt {n}, und {n} erzählt einem nahestehenden Menschen davon.", "a": "Hör mir einfach zu. Lösungen brauche ich gerade nicht.", "z": "Hilf mir, eine Lösung zu finden. Das entlastet mich am meisten.", "ao": "{Er} will, dass man einfach zuhört. Lösungen braucht {er} gerade nicht.", "zo": "{Er} will gemeinsam eine Lösung finden. Das entlastet {ihn} am meisten.", "g": "Wie kann ich fragen, was du gerade brauchst, ohne dass es komisch wirkt?"},
- {"b": 3, "t": "Zwei Geschenke", "qs": "Zu deinem Geburtstag gibt es zwei Geschenke, beide von Herzen. Welches berührt dich mehr?", "qo": "Zum Geburtstag von {n} gibt es zwei Geschenke, beide von Herzen. Welches berührt {n} mehr?", "a": "Ein Brief, in dem steht, was ich dem anderen bedeute.", "z": "Ein Tag, den der andere nur für uns beide geplant hat.", "ao": "Ein Brief, in dem steht, was {er} dem anderen bedeutet.", "zo": "Ein Tag, den der andere nur für die beiden geplant hat.", "g": "Was war das schönste Zeichen, dass du jemandem wichtig bist?"},
- {"b": 3, "t": "Allein nicht weiter", "qs": "Du steckst bei etwas fest und kommst allein nicht weiter.", "qo": "{n} steckt bei etwas fest und kommt allein nicht weiter.", "a": "Ich frage schnell um Hilfe. Zusammen geht es leichter.", "z": "Ich versuche es erst lange allein. Ich will niemandem zur Last fallen.", "ao": "{Er} fragt schnell um Hilfe. Zusammen geht es leichter.", "zo": "{Er} versucht es erst lange allein. {Er} will niemandem zur Last fallen.", "g": "Wie kann man dir Hilfe anbieten, sodass du sie gern annimmst?"},
- {"b": 3, "t": "Etwas ist gelungen", "qs": "Dir ist etwas richtig gut gelungen.", "qo": "{n} ist etwas richtig gut gelungen.", "a": "Ich freue mich, wenn andere das mitbekommen. Lob vor anderen tut mir gut.", "z": "Ein Lob unter vier Augen bedeutet mir mehr als Applaus vor anderen.", "ao": "{Er} freut sich, wenn andere das mitbekommen. Lob vor anderen tut {ihm} gut.", "zo": "Ein Lob unter vier Augen bedeutet {ihm} mehr als Applaus vor anderen.", "g": "Wann hast du dich zuletzt von mir richtig gesehen gefühlt?"},
- {"b": 3, "t": "Das neue Outfit", "qs": "Vor einem besonderen Abend fragst du, wie dein neues Outfit aussieht. Was willst du hören, wenn es nicht so gut aussieht?", "qo": "Vor einem besonderen Abend fragt {n}, wie das neue Outfit aussieht. Was will {n} hören, wenn es nicht so gut aussieht?", "a": "Die Wahrheit. Dann kann ich noch etwas ändern.", "z": "Etwas Aufmunterndes. Heute will ich mich einfach wohlfühlen.", "ao": "Die Wahrheit. Dann kann {er} noch etwas ändern.", "zo": "Etwas Aufmunterndes. Heute will {er} sich einfach wohlfühlen.", "g": "Wo wünschst du dir von mir mehr Ehrlichkeit, und wo mehr Rücksicht?"},
- {"b": 4, "t": "Eine große Entscheidung", "qs": "Du stehst vor einer großen Entscheidung, zum Beispiel einem Umzug.", "qo": "{n} steht vor einer großen Entscheidung, zum Beispiel einem Umzug.", "a": "Ich wäge lange ab. Erst wenn alles durchdacht ist, entscheide ich.", "z": "Ich höre auf mein Bauchgefühl. Meist weiß ich schnell, was richtig ist.", "ao": "{Er} wägt lange ab. Erst wenn alles durchdacht ist, entscheidet {er}.", "zo": "{Er} hört auf {sein} Bauchgefühl. Meist weiß {er} schnell, was richtig ist.", "g": "Wie entscheidet ihr zusammen, wenn einer noch abwägt und der andere es längst weiß?"},
- {"b": 4, "t": "Neu anfangen", "qs": "Stell dir vor, du könntest für ein Jahr ganz neu anfangen, in einem anderen Land. Vieles Vertraute bliebe zurück.", "qo": "Stell dir vor, {n} könnte für ein Jahr ganz neu anfangen, in einem anderen Land. Vieles Vertraute bliebe zurück.", "a": "Ich würde es wagen. So eine Chance kommt nicht wieder.", "z": "Ich würde bleiben. Was ich hier habe, ist mir mehr wert.", "ao": "{Er} würde es wagen. So eine Chance kommt nicht wieder.", "zo": "{Er} würde bleiben. Was {er} hier hat, ist {ihm} mehr wert.", "g": "Was hält dich, und was würde dich reizen?"},
- {"b": 4, "t": "Zufall oder Sinn", "qs": "In deinem Leben passiert etwas Großes: eine Begegnung, ein Unglück oder ein Glücksfall.", "qo": "Im Leben von {n} passiert etwas Großes: eine Begegnung, ein Unglück oder ein Glücksfall.", "a": "Das war Zufall. Was ich daraus mache, liegt bei mir.", "z": "Darin steckt ein Sinn, auch wenn ich ihn vielleicht noch nicht sehe.", "ao": "Das war Zufall. Was {er} daraus macht, liegt bei {ihm}.", "zo": "Darin steckt ein Sinn, auch wenn {er} ihn vielleicht noch nicht sieht.", "g": "Gab es so einen Moment bei dir? Wie siehst du ihn heute?"},
- {"b": 4, "t": "Ich will mich ändern", "qs": "Ein Mensch, den du gut kennst, sagt: „Ich will mich ändern.“", "qo": "Ein Mensch, den {n} gut kennt, sagt: „Ich will mich ändern.“", "a": "Ich glaube daran. Menschen können sich auch im Kern ändern.", "z": "Ich freue mich, bleibe aber vorsichtig. Im Kern bleiben Menschen meist, wie sie sind.", "ao": "{Er} glaubt daran. Menschen können sich auch im Kern ändern.", "zo": "{Er} freut sich, bleibt aber vorsichtig. Im Kern bleiben Menschen meist, wie sie sind.", "g": "Wo hast du dich selbst schon einmal wirklich verändert?"},
- {"b": 4, "t": "Rückblick", "qs": "Stell dir vor, du blickst auf ein langes Leben zurück. Was würdest du eher bereuen?", "qo": "Stell dir vor, {n} blickt auf ein langes Leben zurück. Was würde {n} eher bereuen?", "a": "Dinge, die ich getan habe und besser gelassen hätte.", "z": "Dinge, die ich mich nie getraut habe.", "ao": "Dinge, die {er} getan hat und besser gelassen hätte.", "zo": "Dinge, die {er} sich nie getraut hat.", "g": "Was möchtest du auf keinen Fall verpasst haben?"},
- {"b": 4, "t": "Am richtigen Platz", "qs": "Wann fühlst du dich unter Menschen am wohlsten?", "qo": "Wann fühlt sich {n} unter Menschen am wohlsten?", "a": "Wenn ich gebraucht werde und für andere da sein kann.", "z": "Wenn andere einfach gern mit mir zusammen sind.", "ao": "Wenn {er} gebraucht wird und für andere da sein kann.", "zo": "Wenn andere einfach gern mit {ihm} zusammen sind.", "g": "Fühlst du dich bei mir eher gebraucht oder eher gemocht?"}
+ {"t": "Energie", "qs": "Ein schöner Abend mit vielen Leuten ist vorbei. Wie ist es danach meistens in dir?", "qo": "Ein schöner Abend mit vielen Leuten ist vorbei. Wie geht es {n} danach meistens?", "a": "Ich bin noch ganz drin und könnte weiterreden.", "z": "Ich bin voll und freue mich auf Stille.", "ao": "{Er} ist noch ganz drin und könnte weiterreden.", "zo": "{Er} ist voll und freut sich auf Stille.", "g": "Was brauchst du nach so einem Abend am meisten?"},
+ {"t": "Überraschung", "qs": "Zum Geburtstag: Was ist dir meistens lieber?", "qo": "Zum Geburtstag: Was ist {n} meistens lieber?", "a": "Eine echte Überraschung.", "z": "Etwas, das ich mir gewünscht habe.", "ao": "Eine echte Überraschung.", "zo": "Etwas, das {er} sich gewünscht hat.", "g": "Welches Geschenk hat dich am meisten gefreut, und warum?"},
+ {"t": "Erinnern", "qs": "Du denkst an eine schöne Zeit, die vorbei ist.", "qo": "{n} denkt an eine schöne Zeit, die vorbei ist.", "a": "Das macht mich einfach froh.", "z": "Das macht mich auch ein bisschen wehmütig.", "ao": "Das macht {ihn} einfach froh.", "zo": "Das macht {ihn} auch ein bisschen wehmütig.", "g": "Welche Zeit vermisst du manchmal?"},
+ {"t": "Vertrauen", "qs": "Du lernst einen neuen Menschen kennen, der dir sympathisch ist.", "qo": "{n} lernt einen neuen Menschen kennen, der {ihm} sympathisch ist.", "a": "Ich vertraue erst mal und schaue, wie es weitergeht.", "z": "Vertrauen wächst bei mir Schritt für Schritt.", "ao": "{Er} vertraut erst mal und schaut, wie es weitergeht.", "zo": "Vertrauen wächst bei {ihm} Schritt für Schritt.", "g": "Wann hast du gemerkt, dass du mir vertrauen kannst?"},
+ {"t": "Berührt sein", "qs": "Du siehst einen Film oder hörst ein Lied, das traurig oder sehr schön ist.", "qo": "{n} sieht einen Film oder hört ein Lied, das traurig oder sehr schön ist.", "a": "Das geht mir oft richtig nah.", "z": "Ich genieße es als schöne Unterhaltung.", "ao": "Das geht {ihm} oft richtig nah.", "zo": "{Er} genießt es als schöne Unterhaltung.", "g": "Welcher Film oder welches Lied hat dich zuletzt berührt?"},
+ {"t": "Zufall oder Sinn", "qs": "Dir ist etwas Wichtiges durch einen glücklichen Zufall passiert. Wie siehst du das meistens?", "qo": "{n} ist etwas Wichtiges durch einen glücklichen Zufall passiert. Wie sieht {er} das meistens?", "a": "Das war Zufall, ein schöner.", "z": "Irgendwie sollte es wohl so sein.", "ao": "Das war Zufall, ein schöner.", "zo": "Irgendwie sollte es wohl so sein.", "g": "Welcher Zufall hat dein Leben am meisten verändert?"},
+ {"t": "Stiller als sonst", "qs": "Du bist eine Weile stiller als sonst. Was ist dir dann meistens lieber?", "qo": "{n} ist eine Weile stiller als sonst. Was ist {ihm} dann meistens lieber?", "a": "Dass jemand nachfragt.", "z": "Dass man mich lässt, bis ich von selbst komme.", "ao": "Dass jemand nachfragt.", "zo": "Dass man {ihn} lässt, bis {er} von selbst kommt.", "g": "Woran kann ich merken, was du gerade brauchst?"},
+ {"t": "Zeigen", "qs": "Dich bewegt etwas, zum Beispiel Freude, Ärger oder Sorge.", "qo": "{n} bewegt etwas, zum Beispiel Freude, Ärger oder Sorge.", "a": "Man sieht es mir meistens gleich an.", "z": "Von außen sieht man meistens weniger, als in mir los ist.", "ao": "Man sieht es {ihm} meistens gleich an.", "zo": "Von außen sieht man meistens weniger, als in {ihm} los ist.", "g": "Gab es einen Moment, in dem in dir viel los war und ich es nicht gemerkt habe?"},
+ {"t": "Warten", "qs": "Du wartest auf etwas Wichtiges, zum Beispiel ein Ergebnis oder eine Zusage. Du kannst selbst nichts mehr tun.", "qo": "{n} wartet auf etwas Wichtiges, zum Beispiel ein Ergebnis oder eine Zusage. {Er} kann selbst nichts mehr tun.", "a": "Ich denke zwischendurch kaum daran.", "z": "Es läuft im Kopf die ganze Zeit mit.", "ao": "{Er} denkt zwischendurch kaum daran.", "zo": "Es läuft bei {ihm} im Kopf die ganze Zeit mit.", "g": "Was hilft dir beim Warten?"},
+ {"t": "Bauch oder Kopf", "qs": "Du hast eine große Entscheidung getroffen. Woran merkst du meistens, dass die Entscheidung richtig war?", "qo": "{n} hat eine große Entscheidung getroffen. Woran merkt {er} meistens, dass die Entscheidung richtig war?", "a": "Es fühlt sich richtig an.", "z": "Die Gründe sprechen dafür.", "ao": "Es fühlt sich richtig an.", "zo": "Die Gründe sprechen dafür.", "g": "Bei welcher Entscheidung hast du auf deinen Bauch gehört, und wie ging es aus?"},
+ {"t": "Veränderung", "qs": "Etwas Neues beginnt, zum Beispiel ein neuer Job oder eine neue Wohnung.", "qo": "Für {n} beginnt etwas Neues, zum Beispiel ein neuer Job oder eine neue Wohnung.", "a": "Ich fühle mich bald zu Hause.", "z": "Es dauert eine Weile, bis es sich nach meinem anfühlt.", "ao": "{Er} fühlt sich bald zu Hause.", "zo": "Es dauert eine Weile, bis es sich für {ihn} nach {sein}em anfühlt.", "g": "Welche Veränderung hat dich mehr Kraft gekostet, als man gesehen hat?"},
+ {"t": "Gelungen", "qs": "Dir ist etwas richtig gut gelungen. Was ist danach meistens in dir?", "qo": "{n} ist etwas richtig gut gelungen. Was ist danach meistens in {ihm}?", "a": "Freude über das, was geschafft ist.", "z": "Schon Gedanken an das, was als Nächstes kommt.", "ao": "Freude über das, was geschafft ist.", "zo": "Schon Gedanken an das, was als Nächstes kommt.", "g": "Worauf bist du stolz, auch wenn du es selten sagst?"},
+ {"t": "Im Streit", "qs": "Du bist mitten in einem Streit mit einem nahen Menschen. Was brauchst du meistens?", "qo": "{n} ist mitten in einem Streit mit einem nahen Menschen. Was braucht {er} meistens?", "a": "Es gleich zu klären.", "z": "Erst Abstand, dann reden.", "ao": "Es gleich zu klären.", "zo": "Erst Abstand, dann reden.", "g": "Was hilft dir in einem Streit mit mir, und was macht es schlimmer?"},
+ {"t": "Trost", "qs": "Dir geht es nicht gut, und ein naher Mensch ist da. Was tut dir meistens mehr gut?", "qo": "{n} geht es nicht gut, und ein naher Mensch ist da. Was tut {ihm} meistens mehr gut?", "a": "Wenn jemand mit mir überlegt, was hilft.", "z": "Wenn einfach jemand da ist und zuhört.", "ao": "Wenn jemand mit {ihm} überlegt, was hilft.", "zo": "Wenn einfach jemand da ist und zuhört.", "g": "Was hat dir mal richtig gutgetan, als es dir schlecht ging?"},
+ {"t": "Zu viel", "qs": "Dir wird alles zu viel. Woran merkst du es meistens zuerst?", "qo": "{n} wird alles zu viel. Woran merkt {er} es meistens zuerst?", "a": "An meiner Stimmung.", "z": "Am Körper, zum Beispiel am Schlaf oder an Verspannungen.", "ao": "An {sein}er Stimmung.", "zo": "Am Körper, zum Beispiel am Schlaf oder an Verspannungen.", "g": "Woran kann ich erkennen, dass dir gerade alles zu viel wird?"},
+ {"t": "Auf meiner Seite", "qs": "Du erzählst einem nahen Menschen von Ärger mit jemand anderem. Was ist dir meistens lieber?", "qo": "{n} erzählt einem nahen Menschen von Ärger mit jemand anderem. Was ist {ihm} meistens lieber?", "a": "Dass der andere erst mal zu mir hält.", "z": "Dass der andere mir ehrlich sagt, wie er es sieht.", "ao": "Dass der andere erst mal zu {ihm} hält.", "zo": "Dass der andere {ihm} ehrlich sagt, wie er es sieht.", "g": "Gab es eine Situation, in der du dir von mir etwas anderes gewünscht hättest?"},
+ {"t": "Humor", "qs": "Ein schwerer Moment, zum Beispiel nach einer schlechten Nachricht. Was ist dir dann meistens lieber?", "qo": "{n} hat einen schweren Moment, zum Beispiel nach einer schlechten Nachricht. Was ist {ihm} dann meistens lieber?", "a": "Wenn jemand mit etwas Humor die Stimmung leichter macht.", "z": "Wenn alle ernst bleiben.", "ao": "Wenn jemand mit etwas Humor die Stimmung leichter macht.", "zo": "Wenn alle ernst bleiben.", "g": "Worüber konntest du in einer schweren Zeit trotzdem lachen?"},
+ {"t": "Aus der Hand geben", "qs": "Jemand übernimmt eine Aufgabe, die sonst du machst, und macht sie anders als du.", "qo": "Jemand übernimmt eine Aufgabe, die sonst {n} macht, und macht sie anders als {er}.", "a": "Das ist mir meistens recht so.", "z": "Ich sehe sofort, was ich anders gemacht hätte.", "ao": "Das ist {ihm} meistens recht so.", "zo": "{Er} sieht sofort, was {er} anders gemacht hätte.", "g": "Wobei fällt es dir schwer, mir etwas zu überlassen?"},
+ {"t": "Nach dem Streit", "qs": "Ein Streit mit einem nahen Menschen ist beigelegt. Ihr habt euch wieder vertragen. Wie ist es danach meistens in dir?", "qo": "Ein Streit zwischen {n} und einem nahen Menschen ist beigelegt. Die beiden haben sich wieder vertragen. Wie ist es danach meistens in {ihm}?", "a": "Dann ist es auch innen vorbei.", "z": "Es klingt noch eine Weile nach.", "ao": "Dann ist es auch innen vorbei.", "zo": "Es klingt noch eine Weile in {ihm} nach.", "g": "Woran würde ich merken, dass es in dir noch nachklingt?"},
+ {"t": "Kritik", "qs": "Ein naher Mensch sagt dir etwas Kritisches, und im Grunde stimmt es. Was kommt bei dir meistens zuerst?", "qo": "Ein naher Mensch sagt {n} etwas Kritisches, und im Grunde stimmt es. Was kommt bei {ihm} meistens zuerst?", "a": "Der Kopf: Ich überlege, ob es stimmt.", "z": "Das Gefühl: Es trifft mich erst mal.", "ao": "Der Kopf: {Er} überlegt, ob es stimmt.", "zo": "Das Gefühl: Es trifft {ihn} erst mal.", "g": "Wie kann ich dir etwas Kritisches sagen, damit es gut bei dir ankommt?"},
+ {"t": "Was ankommt", "qs": "Was berührt dich meistens mehr?", "qo": "Was berührt {n} meistens mehr?", "a": "Wenn jemand an etwas Kleines denkt, das ich mal nebenbei erwähnt habe.", "z": "Wenn sich jemand Zeit nur für mich nimmt.", "ao": "Wenn jemand an etwas Kleines denkt, das {er} mal nebenbei erwähnt hat.", "zo": "Wenn sich jemand Zeit nur für {ihn} nimmt.", "g": "Was hat dir zuletzt gezeigt, dass du mir wichtig bist?"},
+ {"t": "Wohin die Gedanken gehen", "qs": "Wenn du die Gedanken einfach laufen lässt: Wo sind sie meistens?", "qo": "Wenn {n} die Gedanken einfach laufen lässt: Wo sind sie meistens?", "a": "Bei dem, was kommt, und wo ich hinwill.", "z": "Bei dem, was gerade ist.", "ao": "Bei dem, was kommt, und wo {er} hinwill.", "zo": "Bei dem, was gerade ist.", "g": "Was wünschst du dir für die nächsten zehn Jahre?"},
+ {"t": "Was schlimmer wäre", "qs": "Was wäre für dich schlimmer?", "qo": "Was wäre für {n} schlimmer?", "a": "Nicht mehr gebraucht zu werden.", "z": "Nicht mehr frei zu sein.", "ao": "Nicht mehr gebraucht zu werden.", "zo": "Nicht mehr frei zu sein.", "g": "Wann hast du dich zuletzt richtig gebraucht gefühlt, und wann richtig frei?"},
+ {"t": "Unausgesprochene Wünsche", "qs": "Du wünschst dir etwas von einem nahen Menschen, zum Beispiel Zeit, Hilfe oder eine Umarmung. Was ist dir lieber?", "qo": "{n} wünscht sich etwas von einem nahen Menschen, zum Beispiel Zeit, Hilfe oder eine Umarmung. Was ist {ihm} lieber?", "a": "Ich sage es lieber selbst.", "z": "Ich finde es schöner, wenn der andere es von selbst merkt.", "ao": "{Er} sagt es lieber selbst.", "zo": "{Er} findet es schöner, wenn der andere es von selbst merkt.", "g": "Was wünschst du dir manchmal von mir, ohne es zu sagen?"}
 ];
 var GEDANKEN=[
  {"t": "Der Traum", "q": "Stell dir vor, dein bisheriges Leben war ein Traum. Du kannst aufwachen, in ein echtes Leben, das du nicht kennst. Oder du träumst weiter.", "a": "Aufwachen", "z": "Weiterträumen", "g": "Was aus deinem jetzigen Leben würdest du am meisten vermissen?"},
@@ -220,6 +230,7 @@ var GEDANKEN=[
  {"t": "Verstehen", "q": "Einmal im Leben darfst du dir eines wünschen.", "a": "Einen Menschen ganz verstehen", "z": "Von einem Menschen ganz verstanden werden", "g": "Wo fühlst du dich von mir verstanden, und wo noch nicht?"},
  {"t": "Danach", "q": "Stell dir vor, es gäbe einen sicheren Beweis, dass es nach dem Tod weitergeht.", "a": "Erleichterung", "z": "Beunruhigung", "g": "Hat sich dein Blick darauf im Lauf der Zeit verändert?"}
 ];
+/* DATEN-ENDE */
 var PRON={er:{Er:"Er",er:"er",ihn:"ihn",ihm:"ihm",sein:"sein"},sie:{Er:"Sie",er:"sie",ihn:"sie",ihm:"ihr",sein:"ihr"}};
 /* Setzt Name und Pronomen ein. Unbekannte Platzhalter bleiben stehen, damit der Round-Trip sie findet. */
 function fill(text,name,pron){
@@ -236,23 +247,27 @@ function b64(s){return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+
 function b64b(a){var s="";for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return b64(s);}
 function b64t(s){var bytes=new TextEncoder().encode(s),out="";for(var i=0;i<bytes.length;i++)out+=String.fromCharCode(bytes[i]);return b64(out);}
 
-/* Ein Code pro Person, Aufbau siehe code-format.md */
+/* Stufen: 0 ganz klar A, 1 eher A, 2 eher B, 3 ganz klar B. Seite: 0 = A, 1 = B. */
+function seite(l){return l<2?0:1;}
+function stufe(seiteAB,klar){return seiteAB===0?(klar?0:1):(klar?3:2);}
+/* Ein Code pro Person, Aufbau siehe code-format.md (PT16, 30 Byte Nutzdaten) */
 function buildCode(S){
   var w=new BitW(),i,a;
-  for(i=0;i<N;i++)w.p(S.self.ans[i]||0,1);
+  for(i=0;i<N;i++)w.p(S.self.ans[i]||0,2);
   for(i=0;i<NG;i++)w.p(S.self.ged[i]||0,1);
-  for(i=0;i<N;i++){a=S.other.ans[i];w.p((a.s||a.v===null)?4:(a.v+(a.u?2:0)),3);}
+  for(i=0;i<N;i++){a=S.other.ans[i];w.p((a.s||a.v===null)?4:a.v,3);}
   for(i=0;i<N+NG;i++)w.p(tc(S.self.t[i]||0),2);
   for(i=0;i<N;i++)w.p(tc(S.other.t[i]||0),2);
+  w.p(0,6);
   return PREFIX+"."+b64t(JSON.stringify({n:S.me,p:S.partner}))+"."+b64b(w.out());
 }
-/* Wie oft entspricht der Tipp über die andere Person der eigenen Antwort? Ohne „kann ich nicht beurteilen". */
+/* Wie oft liegt der Tipp über die andere Person auf derselben Seite wie die eigene Antwort? Ohne „kann ich nicht beurteilen". */
 function projection(S){
   var same=0,tot=0;
-  for(var i=0;i<N;i++){var a=S.other.ans[i];if(a.s||a.v===null)continue;tot++;if(a.v===S.self.ans[i])same++;}
+  for(var i=0;i<N;i++){var a=S.other.ans[i];if(a.s||a.v===null)continue;tot++;if(seite(a.v)===seite(S.self.ans[i]))same++;}
   return tot?{gleich:same,gesamt:tot,prozent:Math.round(same/tot*100)}:null;
 }
-root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,BLOCKNAMEN:BLOCKNAMEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,N:N,NG:NG,MAX_SKIP:MAX_SKIP,tc:tc,buildCode:buildCode,projection:projection};
+root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,RUNDEN:RUNDEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,N:N,NG:NG,MAX_SKIP:MAX_SKIP,tc:tc,seite:seite,stufe:stufe,buildCode:buildCode,projection:projection};
 })(typeof window!=="undefined"?window:this);
 </script>
 
@@ -260,24 +275,34 @@ root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,BLOCKNAMEN:BLOCKNAME
 /* ===== Oberfläche ===== */
 "use strict";
 (function(){
-var K=window.EOK, N=K.N, NG=K.NG, STORE="pt-v15";
+var K=window.EOK, N=K.N, NG=K.NG, STORE="pt-v16", OLD_STORE="pt-v15";
 var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
-var S=load()||fresh(), flashMsg="";
+var flashMsg="", S=load()||migrate()||fresh();
 takeInvite();
 
 function arr(n,v){var a=[];for(var i=0;i<n;i++)a.push(typeof v==="function"?v():v);return a;}
-function freshOther(){return {i:0,done:false,ans:arr(N,function(){return {v:null,u:false,s:false};}),t:arr(N,0),flip:{}};}
+/* Antworten über die andere Person: v = Stufe 0 bis 3 oder null, s = „kann ich nicht beurteilen“. */
+function freshOther(){return {i:0,done:false,ans:arr(N,function(){return {v:null,s:false};}),t:arr(N,0),flip:{}};}
 function fresh(){return {v:K.VERSION,fmt:2,me:"",view:"setup",part:null,cur:-1,intro:false,invite:"",
   self:{i:0,done:false,ans:arr(N,null),ged:arr(NG,null),t:arr(N+NG,0),flip:{}},people:[]};}
-/* Gespeicherter Stand. Ein Stand aus v1.5 mit nur einer Person wird übernommen. */
 function load(){
   try{
     var o=JSON.parse(localStorage.getItem(STORE)||"null");
-    if(!o||o.v!==K.VERSION)return null;
-    if(o.fmt===2)return o;
-    var n=fresh();n.me=o.me||"";if(o.self)n.self=o.self;
-    if(o.partner&&o.other)n.people.push({name:o.partner,pron:o.pron||"er",other:o.other});
-    n.view=n.me?"hub":"setup";
+    if(o&&o.v===K.VERSION&&o.fmt===2)return o;
+  }catch(e){}
+  return null;
+}
+/* Stand aus v1.5: Die Fragen sind neu, also beginnen Teil 1 und Teil 2 neu. Name und Personen bleiben. */
+function migrate(){
+  try{
+    var o=JSON.parse(localStorage.getItem(OLD_STORE)||"null");
+    if(!o||!o.me)return null;
+    var n=fresh();n.me=o.me;n.view="hub";n.invite=o.invite||"";
+    (Array.isArray(o.people)?o.people:(o.partner?[{name:o.partner,pron:o.pron}]:[])).forEach(function(p){
+      if(p&&p.name)n.people.push({name:p.name,pron:p.pron==="sie"?"sie":"er",other:freshOther()});
+    });
+    flashMsg="Es gibt neue Karten. Teil 1 und Teil 2 beginnen neu, deine Personen sind noch da. Alte Codes passen nicht mehr.";
+    try{localStorage.setItem(STORE,JSON.stringify(n));localStorage.removeItem(OLD_STORE);}catch(e){}
     return n;
   }catch(e){}
   return null;
@@ -337,7 +362,7 @@ function frame(night,dealt){
 function bar(){
   var p=$("bar"), P=partObj();
   if(S.view!=="play"||!P){p.innerHTML="";p.classList.remove("on");return;}
-  var segs=S.part==="self"?[6,6,6,6,6]:[6,6,6,6], h="", start=0;
+  var segs=S.part==="self"?K.RUNDEN.concat([NG]):K.RUNDEN, h="", start=0;
   segs.forEach(function(len){var f=Math.max(0,Math.min(1,(P.i-start)/len));h+='<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';start+=len;});
   p.innerHTML=h;p.classList.add("on");
 }
@@ -428,7 +453,7 @@ function hub(){
   $("names").onclick=function(){S.view="setup";go();};
   $("reset").onclick=function(){
     if(!confirm("Wirklich alles löschen? Deine Antworten und alle Codes auf diesem Handy sind dann weg."))return;
-    try{localStorage.removeItem(STORE);}catch(e){}S=fresh();lastKey=null;render();
+    try{localStorage.removeItem(STORE);localStorage.removeItem(OLD_STORE);}catch(e){}S=fresh();lastKey=null;render();
   };
 }
 function startPart(part,i){
@@ -482,7 +507,8 @@ function intro(){
   if(S.part==="self"&&!night){
     head="Teil 1 · Über dich";
     card='Es geht um dich und die Menschen, die dir nahestehen.';
-    text='<p class="lead">Es gibt keine richtigen Antworten und keine besseren Seiten. Wenn beides passt, nimm, was häufiger stimmt. Der erste Impuls ist meistens der ehrlichere.</p>';
+    text='<p class="lead">Denk an die meisten Fälle. Ausnahmen gibt es immer.</p>'+
+      '<p class="lead">Tipp erst auf die Karte, die eher passt. Dann wählst du, wie deutlich: ganz klar oder eher. Es gibt keine bessere Seite.</p>';
     btn="Erste Karte ziehen";backLabel="Übersicht";
   }else if(night){
     head="Zum Schluss";
@@ -492,8 +518,8 @@ function intro(){
   }else{
     head="Teil 2 · Über "+pa;
     card='Was trifft eher auf '+pa+' zu?';
-    text='<p class="lead">Dieselben Situationen, diesmal mit '+pa+' darin. Wähl jeweils die Karte, die eher zu '+pa+' passt.</p>'+
-      '<p class="lead">Wenn du unsicher bist, tipp erst auf „Bin unsicher“ und wähle trotzdem eine Karte. „Kann ich nicht beurteilen“ geht höchstens '+['null','einmal','zweimal','dreimal','viermal','fünfmal'][K.MAX_SKIP]+'.</p>';
+    text='<p class="lead">Dieselben Karten, diesmal mit '+pa+' darin. Wähl die Karte, die eher zu '+pa+' passt, und dann, wie deutlich: ganz klar oder eher.</p>'+
+      '<p class="lead">„Kann ich nicht beurteilen“ geht höchstens '+['null','einmal','zweimal','dreimal','viermal','fünfmal'][K.MAX_SKIP]+'.</p>';
     btn="Erste Karte ziehen";backLabel="Übersicht";
   }
   frame(night,true);
@@ -512,11 +538,21 @@ function intro(){
 }
 
 /* ---------- Karten ---------- */
+/* Fragekarten haben vier Stufen: erst die Karte (A oder B) antippen, dann „eher“ oder „ganz klar“.
+   Gedankenexperimente bleiben bei einem Tipp. Die Reihenfolge von A und B wird pro Karte und Person gemischt. */
 function sizeClass(q){return q.length>100?" l":q.length>65?" m":"";}
 function cardHTML(o){
   var f=flipFor(o.P,o.k), first=f?{t:o.item.z,v:1}:{t:o.item.a,v:0}, second=f?{t:o.item.a,v:0}:{t:o.item.z,v:1};
   var done=o.chosen!==null&&o.chosen!==undefined;
-  function ac(x,cls){return '<button class="acard '+cls+(o.chosen===x.v?" sel":"")+'" data-v="'+x.v+'">'+esc(x.t)+'</button>';}
+  var side=!done?null:o.levels?K.seite(o.chosen):o.chosen, klar=o.chosen===0||o.chosen===3;
+  function ac(x,cls){
+    var sel=side===x.v;
+    var h='<button class="acard '+cls+(sel?" sel":"")+'" data-v="'+x.v+'"'+(o.levels?' aria-expanded="'+sel+'"':'')+'>'+esc(x.t)+'</button>';
+    if(o.levels)h+='<div class="str'+(sel?" on":"")+'" data-for="'+x.v+'"><span class="shint">Wie deutlich?</span>'+
+      '<button class="sbtn" data-l="'+K.stufe(x.v,false)+'" aria-pressed="'+(sel&&!klar)+'">eher</button>'+
+      '<button class="sbtn" data-l="'+K.stufe(x.v,true)+'" aria-pressed="'+(sel&&klar)+'">ganz klar</button></div>';
+    return h;
+  }
   return '<div class="screen">'+
     '<div class="top"><b>'+o.who+'</b><button class="txt" id="pause">Pause</button></div>'+
     '<div class="deck"><div class="qcard"><div class="qhead"><span>'+esc(o.label)+'</span><span>'+o.num+'</span></div>'+
@@ -528,14 +564,27 @@ function cardHTML(o){
     '<div class="foot"><button class="txt" id="back">Zurück</button>'+(o.canNext?'<button class="txt" id="next" style="color:var(--on)">Weiter</button>':'')+'</div>'+
     '</div>';
 }
-function wireCard(onPick,onBack,onNext){
-  Array.prototype.forEach.call(app().querySelectorAll(".acard"),function(b){
+function wireCard(onPick,onBack,onNext,levels){
+  var h=app().querySelector(".hand");
+  Array.prototype.forEach.call(h.querySelectorAll(".acard"),function(b){
     b.onclick=function(){
       if(moving)return;
-      var v=+b.dataset.v, h=app().querySelector(".hand");
+      var v=+b.dataset.v;
       h.classList.add("done");h.classList.remove("off");
-      Array.prototype.forEach.call(h.querySelectorAll(".acard"),function(x){x.classList.toggle("sel",x===b);});
-      onPick(v);
+      Array.prototype.forEach.call(h.querySelectorAll(".acard"),function(x){x.classList.toggle("sel",x===b);if(levels)x.setAttribute("aria-expanded",String(x===b));});
+      if(!levels){onPick(v);return;}
+      Array.prototype.forEach.call(h.querySelectorAll(".str"),function(r){
+        var on=+r.dataset.for===v;r.classList.toggle("on",on);
+        if(!on)Array.prototype.forEach.call(r.querySelectorAll(".sbtn"),function(x){x.setAttribute("aria-pressed","false");});
+        else if(r.scrollIntoView&&!RM)try{r.scrollIntoView({block:"nearest",behavior:"smooth"});}catch(e){}
+      });
+    };
+  });
+  Array.prototype.forEach.call(h.querySelectorAll(".sbtn"),function(b){
+    b.onclick=function(){
+      if(moving)return;
+      Array.prototype.forEach.call(h.querySelectorAll(".sbtn"),function(x){x.setAttribute("aria-pressed",String(x===b));});
+      onPick(+b.dataset.l);
     };
   });
   $("back").onclick=function(){if(!moving)onBack();};
@@ -546,11 +595,11 @@ function wireCard(onPick,onBack,onNext){
 function selfQ(){
   var P=S.self, i=P.i, it=K.ITEMS[i];
   frame(false,true);
-  app().innerHTML=cardHTML({P:P,k:"s"+i,item:{q:it.qs,a:it.a,z:it.z},chosen:P.ans[i],who:"Über dich",label:K.BLOCKNAMEN[it.b-1],num:(i+1)+" / "+(N+NG),canNext:P.ans[i]!==null});
+  app().innerHTML=cardHTML({P:P,k:"s"+i,item:{q:it.qs,a:it.a,z:it.z},chosen:P.ans[i],levels:true,who:"Über dich",label:it.t,num:(i+1)+" / "+(N+NG),canNext:P.ans[i]!==null});
   function advance(){addTime(P,i);P.i++;if(P.i===N)S.intro=true;save();later(render);}
-  wireCard(function(v){P.ans[i]=v;advance();},
+  wireCard(function(l){P.ans[i]=l;advance();},
     function(){addTime(P,i);if(i===0)S.intro=true;else P.i--;go();},
-    advance);
+    advance,true);
 }
 function gedQ(){
   var P=S.self, i=P.i, j=i-N, g=K.GEDANKEN[j];
@@ -566,32 +615,31 @@ function gedQ(){
   }
   wireCard(function(v){P.ged[j]=v;advance();},
     function(){addTime(P,i);if(j===0)S.intro=true;else P.i--;go();},
-    advance);
+    advance,false);
 }
 function otherQ(){
   var p=cur(), P=p.other, i=P.i, it=K.ITEMS[i], a=P.ans[i], pa=esc(p.name);
   var used=P.ans.filter(function(x){return x.s;}).length, canSkip=a.s||used<K.MAX_SKIP;
   frame(false,true);
   var extra='<div class="tools">'+
-    '<button class="chip'+(a.u?" on":"")+'" id="uns" aria-pressed="'+a.u+'"'+(a.s?" disabled":"")+'>Bin unsicher</button>'+
     '<button class="chip flag'+(a.s?" on":"")+'" id="skip" aria-pressed="'+a.s+'"'+(canSkip?"":" disabled")+'>'+(a.s?"Doch beantworten":"Kann ich nicht beurteilen")+'</button>'+
     '</div>'+(used>0?'<p class="note">'+used+' von '+K.MAX_SKIP+' offen gelassen</p>':'');
   var item={q:K.fill(it.qo,p.name,p.pron),a:K.fill(it.ao,p.name,p.pron),z:K.fill(it.zo,p.name,p.pron)};
-  app().innerHTML=cardHTML({P:P,k:"f"+i,item:item,ask:"Was trifft eher auf "+pa+" zu?",chosen:a.v,who:"Über "+pa,label:K.BLOCKNAMEN[it.b-1],num:(i+1)+" / "+N,extra:extra,off:a.s,canNext:a.v!==null||a.s});
+  app().innerHTML=cardHTML({P:P,k:"f"+i,item:item,ask:"Was trifft eher auf "+pa+" zu?",chosen:a.v,levels:true,who:"Über "+pa,label:it.t,num:(i+1)+" / "+N,extra:extra,off:a.s,canNext:a.v!==null||a.s});
   function advance(){
     addTime(P,i);P.i++;
     if(P.i>=N){P.done=true;S.view="person";S.part=null;flashMsg="Geschafft. Jetzt kann "+p.name+" deinen Code bekommen.";}
     save();later(render);
   }
-  wireCard(function(v){a.v=v;a.s=false;advance();},
+  wireCard(function(l){a.v=l;a.s=false;advance();},
     function(){addTime(P,i);if(i===0)S.intro=true;else P.i--;go();},
-    advance);
-  $("uns").onclick=function(){a.u=!a.u;save();var b=$("uns");b.classList.toggle("on",a.u);b.setAttribute("aria-pressed",a.u);};
+    advance,true);
   $("skip").onclick=function(){
     if(moving)return;
     if(a.s){a.s=false;save();render();return;}
-    a.s=true;a.v=null;a.u=false;
+    a.s=true;a.v=null;
     var h=app().querySelector(".hand");h.classList.add("off");h.classList.remove("done");$("skip").classList.add("on");
+    Array.prototype.forEach.call(h.querySelectorAll(".str"),function(r){r.classList.remove("on");});
     advance();
   };
 }
@@ -610,7 +658,7 @@ function person(){
       '<button class="btn" id="wa">Per WhatsApp schicken</button>'+
       '<div class="row" style="margin-top:10px"><button class="btn line" id="copy">Kopieren</button><button class="btn line" id="dl">Als Datei</button></div>'+
       (pr?'<hr class="rule"><p class="stat">'+pr.prozent+'%</p>'+
-        '<p class="lead">So oft hast du bei '+pa+' dasselbe gewählt wie bei dir selbst, bei '+pr.gleich+' von '+pr.gesamt+' Fragen.</p>'+
+        '<p class="lead">So oft hast du bei '+pa+' dieselbe Seite gewählt wie bei dir selbst, bei '+pr.gleich+' von '+pr.gesamt+' Karten.</p>'+
         '<p class="lead">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen ein Stück weit sich selbst. Das passiert jedem, und wer sich ähnlich ist, liegt damit oft sogar richtig.</p>':'')+
       '<hr class="rule"><p class="lead">Wenn der Code von '+pa+' da ist, setzt euch zusammen und deckt auf.</p>'+
       '<a class="btn line" style="margin-top:14px" href="auswertung.html">Zur Auswertung</a>';
@@ -644,11 +692,13 @@ function person(){
   };
 }
 
-/* Tastatur am Laptop: 1/2 oder Pfeile für die Karten, Enter für Weiter */
+/* Tastatur am Laptop: 1/2 oder Pfeile für die Karten, danach E für „eher“ und K für „ganz klar“, Enter für Weiter */
 document.addEventListener("keydown",function(e){
   var tg=e.target&&e.target.tagName;
   if(tg==="INPUT"||tg==="TEXTAREA"||e.metaKey||e.ctrlKey||e.altKey)return;
   if(e.key==="Enter"&&tg!=="BUTTON"&&tg!=="A"){var n=$("next");if(n){e.preventDefault();n.click();}return;}
+  var k=String(e.key).toLowerCase();
+  if(k==="e"||k==="k"){var row=app().querySelector(".str.on");if(row){var bs=row.querySelectorAll(".sbtn");e.preventDefault();bs[k==="e"?0:1].click();}return;}
   var idx=(e.key==="1"||e.key==="ArrowUp"||e.key==="ArrowLeft")?0:(e.key==="2"||e.key==="ArrowDown"||e.key==="ArrowRight")?1:-1;
   if(idx<0)return;
   var cards=app().querySelectorAll(".acard");if(cards[idx]){e.preventDefault();cards[idx].click();}

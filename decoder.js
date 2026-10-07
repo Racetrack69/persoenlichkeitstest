@@ -1,10 +1,10 @@
-/* PT15-Decoder, Bereich 2. Liest einen Code aus index.html v1.5 (ein Code pro Person).
+/* PT16-Decoder, Bereich 2. Liest einen Code aus index.html v1.6 (ein Code pro Person).
    Nach code-format.md geschrieben, unabhängig vom Encoder. Läuft in Node und im Browser. */
 (function(root){
 "use strict";
-var PREFIX="PT15", N=24, NG=6, BYTES=27, PAD=6;
-var BLOCK_OF=[];for(var i=0;i<N;i++)BLOCK_OF.push(i<6?1:i<12?2:i<18?3:4);
-var ANSWER=["A","B","A (unsicher)","B (unsicher)","kann nicht beurteilen"];
+var PREFIX="PT16", N=24, NG=6, BYTES=30, PAD=6;
+var STUFE=["ganz klar A","eher A","eher B","ganz klar B"];
+var GED=["A","B"];
 var TIME=["unter 2 s","2 bis 5 s","5 bis 15 s","ab 15 s"];
 
 function b64urlToBytes(s){
@@ -28,6 +28,7 @@ BitR.prototype.read=function(n){
   return v;
 };
 
+/* Stufe 0 bis 3: Seite (value) 0 = A, 1 = B; klar = ganz klar statt eher. */
 function decode(code){
   code=String(code).trim();
   var parts=code.split(".");
@@ -40,16 +41,18 @@ function decode(code){
   if(bytes.length!==BYTES)throw new Error("Nutzdaten: "+bytes.length+" Byte, erwartet "+BYTES);
   var r=new BitR(bytes), i, out={version:PREFIX,name:head.n,partner:head.p,self:{items:[],gedanken:[]},other:{items:[],skipped:0},warnings:[]};
   var sv=[],gv=[],ov=[];
-  for(i=0;i<N;i++)sv.push(r.read(1));
+  for(i=0;i<N;i++)sv.push(r.read(2));
   for(i=0;i<NG;i++)gv.push(r.read(1));
   for(i=0;i<N;i++)ov.push(r.read(3));
-  for(i=0;i<N;i++)out.self.items.push({index:i,block:BLOCK_OF[i],value:sv[i],label:ANSWER[sv[i]],time:r.read(2)});
-  for(i=0;i<NG;i++)out.self.gedanken.push({index:i,value:gv[i],label:ANSWER[gv[i]],time:r.read(2)});
+  for(i=0;i<N;i++){var l=sv[i];out.self.items.push({index:i,level:l,value:l<2?0:1,klar:l===0||l===3,label:STUFE[l],time:r.read(2)});}
+  for(i=0;i<NG;i++)out.self.gedanken.push({index:i,value:gv[i],label:GED[gv[i]],time:r.read(2)});
   for(i=0;i<N;i++){
     var a=ov[i];
-    if(a>4)out.warnings.push("Frage "+(i+1)+": ungültiger Antwortwert "+a);
-    var it={index:i,block:BLOCK_OF[i],raw:a,value:a>=4?null:(a&1),unsure:a===2||a===3,skipped:a===4,label:ANSWER[a]||("ungültig "+a),time:r.read(2)};
-    if(it.skipped)out.other.skipped++;
+    if(a>4)out.warnings.push("Karte "+(i+1)+": ungültiger Antwortwert "+a);
+    var sk=a===4, ok=a<4;
+    var it={index:i,raw:a,level:ok?a:null,value:ok?(a<2?0:1):null,klar:ok?(a===0||a===3):null,skipped:sk,
+      label:ok?STUFE[a]:sk?"kann nicht beurteilen":"ungültig "+a,time:r.read(2)};
+    if(sk)out.other.skipped++;
     out.other.items.push(it);
   }
   out.self.items.forEach(function(it){it.timeLabel=TIME[it.time];});
@@ -61,25 +64,27 @@ function decode(code){
 }
 
 function toText(d){
-  var L=["PT15 · von: "+d.name+" · über: "+d.partner];
-  L.push("Nr  Block  über sich        über "+d.partner);
+  var L=["PT16 · von: "+d.name+" · über: "+d.partner];
+  L.push("Nr  über sich      über "+d.partner);
   for(var i=0;i<N;i++){
     var s=d.self.items[i],o=d.other.items[i];
-    L.push(String(i+1).padStart(2,"0")+"  B"+s.block+"     "+s.label.padEnd(16)+" "+o.label);
+    L.push(String(i+1).padStart(2,"0")+"  "+s.label.padEnd(14)+" "+o.label);
   }
   L.push("Gedanken: "+d.self.gedanken.map(function(g){return "G"+(g.index+1)+" "+g.label;}).join(", "));
   if(d.warnings.length)L.push("Hinweise: "+d.warnings.join("; "));
   return L.join("\n");
 }
 
-/* Findet alle PT15-Codes in beliebigem Text, etwa in kopierten WhatsApp-Nachrichten. */
-function findCodes(text){return String(text).match(/PT15\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
+/* Findet alle PT16-Codes in beliebigem Text, etwa in kopierten WhatsApp-Nachrichten. */
+function findCodes(text){return String(text).match(/PT16\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
+/* Codes aus älteren Versionen (andere Fragen), damit die Auswertung freundlich darauf hinweisen kann. */
+function findOldCodes(text){return String(text).match(/PT1[3-5]\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
 function decodeAll(text){
   return findCodes(text).map(function(c){
     try{return {ok:true,code:c,data:decode(c)};}catch(e){return {ok:false,code:c,error:e.message};}
   });
 }
 
-var api={PREFIX:PREFIX,decode:decode,decodeAll:decodeAll,findCodes:findCodes,toText:toText};
-if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT15=api;
+var api={PREFIX:PREFIX,decode:decode,decodeAll:decodeAll,findCodes:findCodes,findOldCodes:findOldCodes,toText:toText};
+if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT16=api;
 })(typeof window!=="undefined"?window:this);
