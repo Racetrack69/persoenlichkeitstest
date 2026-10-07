@@ -22,7 +22,7 @@ check("Version, Runden und Texte gleich index.html und fragen.json",function(){
   eq(A.VERSION,K.VERSION,"Version");
   eq(JSON.stringify(A.RUNDEN),JSON.stringify(K.RUNDEN),"Runden");eq(JSON.stringify(K.RUNDEN),JSON.stringify(Q.runden),"Runden fragen.json");
   eq(A.ITEMS.length,K.ITEMS.length,"Anzahl Karten");eq(A.GEDANKEN.length,K.GEDANKEN.length,"Anzahl Gedanken");eq(K.ITEMS.length,Q.items.length,"Anzahl fragen.json");
-  K.ITEMS.forEach(function(it,i){["t","qs","qo","a","z","ao","zo","g"].forEach(function(f){eq(A.ITEMS[i][f],it[f],"Karte "+(i+1)+" "+f);eq(Q.items[i][f],it[f],"fragen.json "+(i+1)+" "+f);});});
+  K.ITEMS.forEach(function(it,i){["t","qs","qo","a","z","ka","kz","ao","zo","g"].forEach(function(f){eq(A.ITEMS[i][f],it[f],"Karte "+(i+1)+" "+f);eq(Q.items[i][f],it[f],"fragen.json "+(i+1)+" "+f);});});
   K.GEDANKEN.forEach(function(g,i){["t","q","a","z","g"].forEach(function(f){eq(A.GEDANKEN[i][f],g[f],"G"+(i+1)+" "+f);});});
   /* Name und Pronomen: kein Platzhalter darf übrig bleiben, Ich- und Du-Fassung haben keine */
   K.ITEMS.forEach(function(it,i){
@@ -100,6 +100,18 @@ check("Größte Unterschiede: feste Beispiele",function(){
   var vA=A.vergleiche(a,b),vB=A.vergleiche(b,a);
   eq(A.groessteUnterschiede(vA,vB,3).join(","),"9,5,20","Reihenfolge der Top-Karten");
   eq(vA.items[12].gleich,true,"eher A gegen ganz klar A ist gleich");eq(vA.items[12].abstand,1,"Abstand 1");
+  /* Kurzformen für die Blasen (Variante 1): nach Seite, mit Stufe, ohne Ich und ohne Pronomen */
+  A.ITEMS.forEach(function(it,i){
+    eq(A.kurz(it,0),it.ka,"Kurzform A "+(i+1));eq(A.kurz(it,1),it.ka,"Kurzform eher A "+(i+1));
+    eq(A.kurz(it,2),it.kz,"Kurzform eher B "+(i+1));eq(A.kurz(it,3),it.kz,"Kurzform B "+(i+1));
+    [it.ka,it.kz].forEach(function(k){
+      if(!k||k.length>24)throw new Error("Kurzform leer oder zu lang: "+(i+1)+" "+k);
+      if(/(^|[^\wäöüß])(ich|mich|mir|du|dich|dir|er|sie|ihn|ihm)(?![\wäöüß])/i.test(k))throw new Error("Kurzform mit Ich oder Pronomen: "+(i+1)+" "+k);
+    });
+    if(it.ka===it.kz)throw new Error("Kurzformen A und B gleich: "+(i+1));
+  });
+  eq(A.kurzantwort(A.ITEMS[12],3),"ganz klar „"+A.ITEMS[12].kz+"“","Kurzantwort ganz klar B");
+  eq(A.kurzantwort(A.ITEMS[12],1),"eher „"+A.ITEMS[12].ka+"“","Kurzantwort eher A");
   eq(A.antwort(A.ITEMS[0],1),"eher „"+A.ITEMS[0].a.replace(/\.$/,"")+"“","Antworttext ohne Schlusspunkt");eq(A.antwort(A.ITEMS[0],3),"ganz klar „"+A.ITEMS[0].z.replace(/\.$/,"")+"“","Antworttext B");
 });
 
