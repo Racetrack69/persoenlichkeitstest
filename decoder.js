@@ -1,90 +1,74 @@
-/* PT16-Decoder, Bereich 2. Liest einen Code aus index.html v1.6 (ein Code pro Person).
-   Nach code-format.md geschrieben, unabhängig vom Encoder. Läuft in Node und im Browser. */
+/* Entweder Oder: Decoder für Codes im Format PT17 (Bereich 2, siehe code-format.md).
+   Läuft im Browser (window.PT17) und unter Node (require("./decoder.js")).
+   Kennt die Kartentexte nicht, nur Indizes. Die Texte kommen aus fragen.json bzw. der Auswertung.
+
+   decode(code)      → {version, name, partner, self:{items:[{value,time}]}, other:{items:[{value,time}]}}
+                       value: 0 = A, 1 = B. time: Zeitklasse 0 bis 3. Index = Position in der Spielreihenfolge.
+                       Wirft einen Fehler mit verständlicher Meldung, wenn der Code nicht passt.
+   decodeAll(text)   → [{ok:true, data} | {ok:false, code, error}] für alle PT17-Codes im Text
+   findCodes(text)   → alle PT17-Codes im Text, z. B. in einer kopierten WhatsApp-Nachricht
+   findOldCodes(text)→ Codes älterer Versionen (PT13 bis PT16), damit die Auswertung freundlich darauf hinweisen kann
+   toText(d, titel)  → kurze Textfassung zum Nachsehen */
 (function(root){
 "use strict";
-var PREFIX="PT16", N=24, NG=6, BYTES=30, PAD=6;
-var STUFE=["ganz klar A","eher A","eher B","ganz klar B"];
-var GED=["A","B"];
-var TIME=["unter 2 s","2 bis 5 s","5 bis 15 s","ab 15 s"];
+var PREFIX="PT17", N=28, BYTES=21;
+var OLD=["PT13","PT14","PT15","PT16"];
 
-function b64urlToBytes(s){
-  if(!/^[A-Za-z0-9_-]*$/.test(s))throw new Error("Unerlaubte Zeichen");
-  s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";
+function fromB64(s){
+  s=String(s).replace(/-/g,"+").replace(/_/g,"/");
+  while(s.length%4)s+="=";
   var bin=typeof atob==="function"?atob(s):Buffer.from(s,"base64").toString("binary");
-  var out=new Array(bin.length);for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out;
-}
-function bytesToUtf8(b){
-  if(typeof TextDecoder==="function")return new TextDecoder("utf-8").decode(new Uint8Array(b));
-  return Buffer.from(b).toString("utf8");
-}
-function BitR(bytes){this.b=bytes;this.pos=0;}
-BitR.prototype.read=function(n){
-  var v=0;
-  for(var k=0;k<n;k++){
-    var byte=this.b[this.pos>>3];
-    if(byte===undefined)throw new Error("Nutzdaten zu kurz (Bit "+this.pos+")");
-    v=(v<<1)|((byte>>(7-(this.pos&7)))&1);this.pos++;
-  }
-  return v;
-};
-
-/* Stufe 0 bis 3: Seite (value) 0 = A, 1 = B; klar = ganz klar statt eher. */
-function decode(code){
-  code=String(code).trim();
-  var parts=code.split(".");
-  if(parts.length!==3)throw new Error("Erwartet 3 Teile, gefunden "+parts.length);
-  if(parts[0]!==PREFIX)throw new Error("Falsches Präfix: "+parts[0]+" (erwartet "+PREFIX+")");
-  var head;
-  try{head=JSON.parse(bytesToUtf8(b64urlToBytes(parts[1])));}catch(e){throw new Error("Header nicht lesbar: "+e.message);}
-  if(!head||typeof head.n!=="string"||typeof head.p!=="string")throw new Error("Header-Feld fehlt: n oder p");
-  var bytes=b64urlToBytes(parts[2]);
-  if(bytes.length!==BYTES)throw new Error("Nutzdaten: "+bytes.length+" Byte, erwartet "+BYTES);
-  var r=new BitR(bytes), i, out={version:PREFIX,name:head.n,partner:head.p,self:{items:[],gedanken:[]},other:{items:[],skipped:0},warnings:[]};
-  var sv=[],gv=[],ov=[];
-  for(i=0;i<N;i++)sv.push(r.read(2));
-  for(i=0;i<NG;i++)gv.push(r.read(1));
-  for(i=0;i<N;i++)ov.push(r.read(3));
-  for(i=0;i<N;i++){var l=sv[i];out.self.items.push({index:i,level:l,value:l<2?0:1,klar:l===0||l===3,label:STUFE[l],time:r.read(2)});}
-  for(i=0;i<NG;i++)out.self.gedanken.push({index:i,value:gv[i],label:GED[gv[i]],time:r.read(2)});
-  for(i=0;i<N;i++){
-    var a=ov[i];
-    if(a>4)out.warnings.push("Karte "+(i+1)+": ungültiger Antwortwert "+a);
-    var sk=a===4, ok=a<4;
-    var it={index:i,raw:a,level:ok?a:null,value:ok?(a<2?0:1):null,klar:ok?(a===0||a===3):null,skipped:sk,
-      label:ok?STUFE[a]:sk?"kann nicht beurteilen":"ungültig "+a,time:r.read(2)};
-    if(sk)out.other.skipped++;
-    out.other.items.push(it);
-  }
-  out.self.items.forEach(function(it){it.timeLabel=TIME[it.time];});
-  out.self.gedanken.forEach(function(it){it.timeLabel=TIME[it.time];});
-  out.other.items.forEach(function(it){it.timeLabel=TIME[it.time];});
-  if(r.read(PAD)!==0)out.warnings.push("Füllbits nicht 0");
-  if(out.other.skipped>4)out.warnings.push(out.other.skipped+" Mal „kann nicht beurteilen“, Limit ist 4");
+  var out=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
   return out;
 }
-
-function toText(d){
-  var L=["PT16 · von: "+d.name+" · über: "+d.partner];
-  L.push("Nr  über sich      über "+d.partner);
-  for(var i=0;i<N;i++){
-    var s=d.self.items[i],o=d.other.items[i];
-    L.push(String(i+1).padStart(2,"0")+"  "+s.label.padEnd(14)+" "+o.label);
-  }
-  L.push("Gedanken: "+d.self.gedanken.map(function(g){return "G"+(g.index+1)+" "+g.label;}).join(", "));
-  if(d.warnings.length)L.push("Hinweise: "+d.warnings.join("; "));
-  return L.join("\n");
+function utf8(bytes){
+  if(typeof TextDecoder!=="undefined")return new TextDecoder("utf-8",{fatal:true}).decode(bytes);
+  return Buffer.from(bytes).toString("utf8");
 }
+function BitR(bytes){this.y=bytes;this.p=0;}
+BitR.prototype.r=function(n){var v=0;for(var k=0;k<n;k++){var by=this.y[this.p>>3];v=(v<<1)|((by>>(7-(this.p&7)))&1);this.p++;}return v;};
 
-/* Findet alle PT16-Codes in beliebigem Text, etwa in kopierten WhatsApp-Nachrichten. */
-function findCodes(text){return String(text).match(/PT16\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
-/* Codes aus älteren Versionen (andere Fragen), damit die Auswertung freundlich darauf hinweisen kann. */
-function findOldCodes(text){return String(text).match(/PT1[3-5]\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g)||[];}
+function decode(code){
+  code=String(code||"").trim();
+  var parts=code.split(".");
+  if(parts.length!==3)throw new Error("Das sieht nicht wie ein Code aus.");
+  if(parts[0]!==PREFIX){
+    if(OLD.indexOf(parts[0])>=0)throw new Error("Dieser Code stammt aus einer älteren Version ("+parts[0]+") und passt nicht zu den neuen Karten.");
+    throw new Error("Unbekannte Version: "+parts[0]+".");
+  }
+  var head;
+  try{head=JSON.parse(utf8(fromB64(parts[1])));}catch(e){throw new Error("Die Namen im Code lassen sich nicht lesen.");}
+  if(!head||typeof head.n!=="string"||typeof head.p!=="string"||!head.n.trim()||!head.p.trim())throw new Error("Im Code fehlen die Namen.");
+  var bytes;
+  try{bytes=fromB64(parts[2]);}catch(e){throw new Error("Der Code ist beschädigt.");}
+  if(bytes.length!==BYTES)throw new Error(bytes.length<BYTES?"Der Code ist unvollständig.":"Der Code ist zu lang.");
+  var r=new BitR(bytes),i,self=[],other=[];
+  for(i=0;i<N;i++)self.push({value:r.r(1),time:0});
+  for(i=0;i<N;i++)other.push({value:r.r(1),time:0});
+  for(i=0;i<N;i++)self[i].time=r.r(2);
+  for(i=0;i<N;i++)other[i].time=r.r(2);
+  return {version:PREFIX,name:head.n,partner:head.p,self:{items:self},other:{items:other}};
+}
+var RE=new RegExp(PREFIX+"\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+","g");
+var RE_OLD=new RegExp("(?:"+OLD.join("|")+")\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+","g");
+function findCodes(text){return (String(text||"").match(RE)||[]);}
+function findOldCodes(text){return (String(text||"").match(RE_OLD)||[]);}
 function decodeAll(text){
   return findCodes(text).map(function(c){
-    try{return {ok:true,code:c,data:decode(c)};}catch(e){return {ok:false,code:c,error:e.message};}
+    try{return {ok:true,data:decode(c)};}catch(e){return {ok:false,code:c,error:e.message};}
   });
 }
-
-var api={PREFIX:PREFIX,decode:decode,decodeAll:decodeAll,findCodes:findCodes,findOldCodes:findOldCodes,toText:toText};
-if(typeof module!=="undefined"&&module.exports)module.exports=api;else root.PT16=api;
+function toText(d,titel){
+  var z=[d.name+" über sich und über "+d.partner+" ("+d.version+")"];
+  for(var i=0;i<N;i++){
+    var t=titel&&titel[i]?titel[i]:"Karte "+(i+1);
+    z.push((i+1)+". "+t+": selbst "+"AB"[d.self.items[i].value]+", Tipp über "+d.partner+" "+"AB"[d.other.items[i].value]+
+      ", Zeit "+d.self.items[i].time+"/"+d.other.items[i].time);
+  }
+  return z.join("\n");
+}
+var api={PREFIX:PREFIX,N:N,BYTES:BYTES,OLD:OLD,decode:decode,decodeAll:decodeAll,findCodes:findCodes,findOldCodes:findOldCodes,toText:toText};
+if(typeof module!=="undefined"&&module.exports)module.exports=api;
+root.PT17=api;
 })(typeof window!=="undefined"?window:this);

@@ -46,6 +46,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .progress.on{opacity:1}
 .seg{flex:1;height:2px;border-radius:2px;background:var(--on-line);overflow:hidden}
 .seg i{display:block;height:100%;width:0;background:var(--accent);transition:width .35s ease}
+.seg.gd{flex:.7}
 
 .screen{max-width:30rem;min-height:100dvh;margin:0 auto;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 30px) 20px calc(env(safe-area-inset-bottom) + 14px)}
 .top{display:flex;justify-content:space-between;align-items:center;min-height:44px;padding:0 4px 10px;font-size:14px;color:var(--on-soft)}
@@ -75,19 +76,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .acard:active{transform:scale(.985)}
 .hand.done .acard{opacity:.4}
 .hand.done .acard.sel{opacity:1;transform:rotate(0) translateY(-3px);box-shadow:0 0 0 3px var(--accent),var(--shadow-s)}
-.hand.off .acard{opacity:.3}
 .about{text-align:center;font-family:var(--serif);font-style:italic;font-size:16px;color:var(--on-soft);margin:0 0 12px}
 .plabel{display:block;font-family:var(--serif);font-size:19px;margin-bottom:8px}
 .prow{display:flex;gap:8px}
 .pbtn{appearance:none;min-width:72px;min-height:44px;padding:8px 18px;border:1.5px solid var(--field);border-radius:999px;background:none;color:var(--card-ink);font-family:var(--serif);font-size:19px;cursor:pointer}
 .pbtn[aria-pressed="true"]{background:var(--card-ink);border-color:var(--card-ink);color:var(--card)}
 .oder{text-align:center;font-family:var(--serif);font-style:italic;font-size:15px;color:var(--on-mute);padding:9px 0}
-.tools{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:22px}
-.chip{appearance:none;display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:1px solid var(--on-line);border-radius:999px;background:none;color:var(--on-soft);font-size:14px;cursor:pointer}
-.chip.on{border-color:var(--accent);background:rgba(233,184,114,.14);color:var(--on)}
-.chip.flag.on{border-color:var(--flag);background:rgba(227,154,130,.12)}
-.chip:disabled{opacity:.35;cursor:default}
-.note{text-align:center;font-size:13px;color:var(--on-mute);margin:10px 0 0}
 
 /* Allgemeine Bausteine */
 .kicker{margin:0 0 12px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
@@ -126,6 +120,9 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 .part .ps{font-weight:600;color:var(--warm);white-space:nowrap}
 .part.fin .ps{color:var(--accent)}
 .part:disabled .ps{color:var(--on-mute);font-weight:500}
+.part.wait{background:none;color:var(--on-mute);border:1.5px dashed var(--on-line);box-shadow:none}
+.part.wait .pk,.part.wait .pm{color:var(--on-mute)}
+.part.wait .ps{color:var(--on-mute);font-weight:500}
 
 /* Fertig und Code */
 .stat{margin:22px 0 4px;font-family:var(--serif);font-size:64px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent)}
@@ -133,6 +130,12 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 .codecard .for{font-size:13px;color:var(--card-soft);margin:0 0 8px}
 .code{font-family:var(--mono);font-size:13px;line-height:1.6;word-break:break-all;user-select:all;-webkit-user-select:all}
 .rule{border:0;border-top:1px solid var(--on-line);margin:28px 0}
+.flash{margin:18px 0 0;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--accent)}
+.plab{margin:28px 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
+.fhint{margin:-8px 0 0;font-size:14px;line-height:1.45;color:var(--card-soft)}
+.privacy{margin:16px 0 0;padding:12px 14px;border:1px solid var(--on-line);border-radius:12px;font-size:14px;line-height:1.5;color:var(--on-soft)}
+.invite{margin:18px 0 4px;padding:16px;border:1.5px solid var(--accent);border-radius:16px}
+.invite p{margin:0 0 12px;font-family:var(--serif);font-size:19px}
 
 /* Ruhige Übergänge: Karte wird ausgeteilt */
 .deal .qcard{animation:dealIn .38s cubic-bezier(.2,.7,.2,1) both}
@@ -146,37 +149,14 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 @media (max-height:720px){
   .screen{padding-top:calc(env(safe-area-inset-top) + 22px)}
   .qcard{padding:16px 20px 20px}
-  .qtext{font-size:26px;margin-top:10px}.qtext.m{font-size:24px}.qtext.l{font-size:21px}
+  .qtext{font-size:26px;margin-top:10px}.qtext.m{font-size:24px}.qtext.l{font-size:20px}
   .hand{padding-top:18px}
   .acard{min-height:52px;padding:11px 16px;font-size:18px}
   .about{margin-bottom:6px;font-size:15px}
   .formcard{gap:14px;padding:20px 22px 22px}
-  .qtext.l{font-size:20px}
-  .tools{margin-top:10px}
-  .chip{min-height:40px;padding:6px 14px;font-size:13px}
-  .note{margin-top:4px}
   .oder{padding:5px 0}
-  .tools{margin-top:12px}
   .foot{min-height:44px;padding-top:4px}
-  .str{padding-top:8px}
-  .sbtn{min-height:40px;padding:6px 14px;font-size:16px}
-  .shint{font-size:15px}
 }
-.flash{margin:18px 0 0;font-family:var(--serif);font-style:italic;font-size:18px;color:var(--accent)}
-.plab{margin:28px 0 4px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-soft)}
-.fhint{margin:-8px 0 0;font-size:14px;line-height:1.45;color:var(--card-soft)}
-.privacy{margin:16px 0 0;padding:12px 14px;border:1px solid var(--on-line);border-radius:12px;font-size:14px;line-height:1.5;color:var(--on-soft)}
-.invite{margin:18px 0 4px;padding:16px;border:1.5px solid var(--accent);border-radius:16px}
-.invite p{margin:0 0 12px;font-family:var(--serif);font-size:19px}
-.part.wait{background:none;color:var(--on-mute);border:1.5px dashed var(--on-line);box-shadow:none}
-.part.wait .pk,.part.wait .pm{color:var(--on-mute)}
-.part.wait .ps{color:var(--on-mute);font-weight:500}
-.str{display:none;align-items:center;justify-content:flex-end;gap:8px;padding:12px 2px 2px}
-.str.on{display:flex;animation:fadeIn .2s ease both}
-.shint{margin-right:auto;font-family:var(--serif);font-style:italic;font-size:16px;color:var(--on-soft)}
-.sbtn{appearance:none;min-width:64px;min-height:44px;padding:8px 18px;border:1.5px solid var(--sand);border-radius:999px;background:none;color:var(--on);font-family:var(--serif);font-size:18px;cursor:pointer}
-.sbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-@media(hover:hover){.sbtn:hover{border-color:var(--accent)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>
@@ -189,55 +169,61 @@ h2{margin:0;font-family:var(--serif);font-weight:400;font-size:32px;line-height:
 /* ===== Kern (Daten und Code). Kein DOM, damit roundtrip.js ihn unter Node prüfen kann. ===== */
 (function(root){
 "use strict";
-var VERSION="v1.6", PREFIX="PT16";
-/* Karten v1.6. Quelle: fragen.json, eingesetzt von build.py zwischen DATEN-ANFANG und DATEN-ENDE. Nicht von Hand ändern.
-   Felder: t = Titel, qs = Frage an dich, qo = Frage über die andere Person ({n} = Name), a/z = Antworten A/B in Ich-Form,
-   ao/zo = dieselben Antworten über die andere Person ({Er} {er} {ihn} {ihm} {sein} = Pronomen), g = Gesprächsfrage.
-   Antwortstufen: 0 ganz klar A, 1 eher A, 2 eher B, 3 ganz klar B. */
+var VERSION="v1.7", PREFIX="PT17";
+/* Karten v1.7. Quelle: fragen.json, eingesetzt von build.py zwischen DATEN-ANFANG und DATEN-ENDE. Nicht von Hand ändern.
+   Die Karten stehen in Spielreihenfolge, Alltagskarten und Gedankenexperimente gemischt (gd = 1 für Gedankenexperiment).
+   Felder: t = Titel, qs = Szene für dich, qo = Szene über die andere Person ({n} = Name), a/z = Antworten A/B,
+   ao/zo = dieselben Antworten über die andere Person ({Er} {er} {ihn} {ihm} {sein} {Sein} = Pronomen).
+   Antworten: 0 = A, 1 = B. Ein Tipp, keine Stufen. */
 /* DATEN-ANFANG */
-var RUNDEN=[6, 6, 6, 6];
-var ITEMS=[
- {"t": "Energie", "qs": "Ein schöner Abend mit vielen Leuten ist vorbei. Wie ist es danach meistens in dir?", "qo": "Ein schöner Abend mit vielen Leuten ist vorbei. Wie geht es {n} danach meistens?", "a": "Ich bin noch ganz drin und könnte weiterreden.", "z": "Ich bin voll und freue mich auf Stille.", "ka": "Noch ganz drin", "kz": "Lust auf Stille", "ao": "{Er} ist noch ganz drin und könnte weiterreden.", "zo": "{Er} ist voll und freut sich auf Stille.", "g": "Was brauchst du nach so einem Abend am meisten?"},
- {"t": "Überraschung", "qs": "Zum Geburtstag: Was ist dir meistens lieber?", "qo": "Zum Geburtstag: Was ist {n} meistens lieber?", "a": "Eine echte Überraschung.", "z": "Etwas, das ich mir gewünscht habe.", "ka": "Überraschung", "kz": "Wunschgeschenk", "ao": "Eine echte Überraschung.", "zo": "Etwas, das {er} sich gewünscht hat.", "g": "Welches Geschenk hat dich am meisten gefreut, und warum?"},
- {"t": "Erinnern", "qs": "Du denkst an eine schöne Zeit, die vorbei ist.", "qo": "{n} denkt an eine schöne Zeit, die vorbei ist.", "a": "Das macht mich einfach froh.", "z": "Das macht mich auch ein bisschen wehmütig.", "ka": "Einfach froh", "kz": "Etwas wehmütig", "ao": "Das macht {ihn} einfach froh.", "zo": "Das macht {ihn} auch ein bisschen wehmütig.", "g": "Welche Zeit vermisst du manchmal?"},
- {"t": "Vertrauen", "qs": "Du lernst einen neuen Menschen kennen, der dir sympathisch ist.", "qo": "{n} lernt einen neuen Menschen kennen, der {ihm} sympathisch ist.", "a": "Ich vertraue erst mal und schaue, wie es weitergeht.", "z": "Vertrauen wächst bei mir Schritt für Schritt.", "ka": "Erst mal vertrauen", "kz": "Schritt für Schritt", "ao": "{Er} vertraut erst mal und schaut, wie es weitergeht.", "zo": "Vertrauen wächst bei {ihm} Schritt für Schritt.", "g": "Wann hast du gemerkt, dass du mir vertrauen kannst?"},
- {"t": "Berührt sein", "qs": "Du siehst einen Film oder hörst ein Lied, das traurig oder sehr schön ist.", "qo": "{n} sieht einen Film oder hört ein Lied, das traurig oder sehr schön ist.", "a": "Das geht mir oft richtig nah.", "z": "Ich genieße es als schöne Unterhaltung.", "ka": "Geht richtig nah", "kz": "Schöne Unterhaltung", "ao": "Das geht {ihm} oft richtig nah.", "zo": "{Er} genießt es als schöne Unterhaltung.", "g": "Welcher Film oder welches Lied hat dich zuletzt berührt?"},
- {"t": "Zufall oder Sinn", "qs": "Dir ist etwas Wichtiges durch einen glücklichen Zufall passiert. Wie siehst du das meistens?", "qo": "{n} ist etwas Wichtiges durch einen glücklichen Zufall passiert. Wie sieht {er} das meistens?", "a": "Das war Zufall, ein schöner.", "z": "Irgendwie sollte es wohl so sein.", "ka": "Schöner Zufall", "kz": "Sollte so sein", "ao": "Das war Zufall, ein schöner.", "zo": "Irgendwie sollte es wohl so sein.", "g": "Welcher Zufall hat dein Leben am meisten verändert?"},
- {"t": "Stiller als sonst", "qs": "Du bist eine Weile stiller als sonst. Was ist dir dann meistens lieber?", "qo": "{n} ist eine Weile stiller als sonst. Was ist {ihm} dann meistens lieber?", "a": "Dass jemand nachfragt.", "z": "Dass man mich lässt, bis ich von selbst komme.", "ka": "Nachfragen", "kz": "In Ruhe lassen", "ao": "Dass jemand nachfragt.", "zo": "Dass man {ihn} lässt, bis {er} von selbst kommt.", "g": "Woran kann ich merken, was du gerade brauchst?"},
- {"t": "Zeigen", "qs": "Dich bewegt etwas, zum Beispiel Freude, Ärger oder Sorge.", "qo": "{n} bewegt etwas, zum Beispiel Freude, Ärger oder Sorge.", "a": "Man sieht es mir meistens gleich an.", "z": "Von außen sieht man meistens weniger, als in mir los ist.", "ka": "Sieht man gleich", "kz": "Innen mehr los", "ao": "Man sieht es {ihm} meistens gleich an.", "zo": "Von außen sieht man meistens weniger, als in {ihm} los ist.", "g": "Gab es einen Moment, in dem in dir viel los war und ich es nicht gemerkt habe?"},
- {"t": "Warten", "qs": "Du wartest auf etwas Wichtiges, zum Beispiel ein Ergebnis oder eine Zusage. Du kannst selbst nichts mehr tun.", "qo": "{n} wartet auf etwas Wichtiges, zum Beispiel ein Ergebnis oder eine Zusage. {Er} kann selbst nichts mehr tun.", "a": "Ich denke zwischendurch kaum daran.", "z": "Es läuft im Kopf die ganze Zeit mit.", "ka": "Kaum dran denken", "kz": "Läuft immer mit", "ao": "{Er} denkt zwischendurch kaum daran.", "zo": "Es läuft bei {ihm} im Kopf die ganze Zeit mit.", "g": "Was hilft dir beim Warten?"},
- {"t": "Bauch oder Kopf", "qs": "Du hast eine große Entscheidung getroffen. Woran merkst du meistens, dass die Entscheidung richtig war?", "qo": "{n} hat eine große Entscheidung getroffen. Woran merkt {er} meistens, dass die Entscheidung richtig war?", "a": "Es fühlt sich richtig an.", "z": "Die Gründe sprechen dafür.", "ka": "Das Gefühl", "kz": "Die Gründe", "ao": "Es fühlt sich richtig an.", "zo": "Die Gründe sprechen dafür.", "g": "Bei welcher Entscheidung hast du auf deinen Bauch gehört, und wie ging es aus?"},
- {"t": "Veränderung", "qs": "Etwas Neues beginnt, zum Beispiel ein neuer Job oder eine neue Wohnung.", "qo": "Für {n} beginnt etwas Neues, zum Beispiel ein neuer Job oder eine neue Wohnung.", "a": "Ich fühle mich bald zu Hause.", "z": "Es dauert eine Weile, bis es sich nach meinem anfühlt.", "ka": "Bald zu Hause", "kz": "Braucht eine Weile", "ao": "{Er} fühlt sich bald zu Hause.", "zo": "Es dauert eine Weile, bis es sich für {ihn} nach {sein}em anfühlt.", "g": "Welche Veränderung hat dich mehr Kraft gekostet, als man gesehen hat?"},
- {"t": "Gelungen", "qs": "Dir ist etwas richtig gut gelungen. Was ist danach meistens in dir?", "qo": "{n} ist etwas richtig gut gelungen. Was ist danach meistens in {ihm}?", "a": "Freude über das, was geschafft ist.", "z": "Schon Gedanken an das, was als Nächstes kommt.", "ka": "Freude daran", "kz": "Schon beim Nächsten", "ao": "Freude über das, was geschafft ist.", "zo": "Schon Gedanken an das, was als Nächstes kommt.", "g": "Worauf bist du stolz, auch wenn du es selten sagst?"},
- {"t": "Im Streit", "qs": "Du bist mitten in einem Streit mit einem nahen Menschen. Was brauchst du meistens?", "qo": "{n} ist mitten in einem Streit mit einem nahen Menschen. Was braucht {er} meistens?", "a": "Es gleich zu klären.", "z": "Erst Abstand, dann reden.", "ka": "Gleich klären", "kz": "Erst Abstand", "ao": "Es gleich zu klären.", "zo": "Erst Abstand, dann reden.", "g": "Was hilft dir in einem Streit mit mir, und was macht es schlimmer?"},
- {"t": "Trost", "qs": "Dir geht es nicht gut, und ein naher Mensch ist da. Was tut dir meistens mehr gut?", "qo": "{n} geht es nicht gut, und ein naher Mensch ist da. Was tut {ihm} meistens mehr gut?", "a": "Wenn jemand mit mir überlegt, was hilft.", "z": "Wenn einfach jemand da ist und zuhört.", "ka": "Mitüberlegen", "kz": "Einfach da sein", "ao": "Wenn jemand mit {ihm} überlegt, was hilft.", "zo": "Wenn einfach jemand da ist und zuhört.", "g": "Was hat dir mal richtig gutgetan, als es dir schlecht ging?"},
- {"t": "Zu viel", "qs": "Dir wird alles zu viel. Woran merkst du es meistens zuerst?", "qo": "{n} wird alles zu viel. Woran merkt {er} es meistens zuerst?", "a": "An meiner Stimmung.", "z": "Am Körper, zum Beispiel am Schlaf oder an Verspannungen.", "ka": "An der Stimmung", "kz": "Am Körper", "ao": "An {sein}er Stimmung.", "zo": "Am Körper, zum Beispiel am Schlaf oder an Verspannungen.", "g": "Woran kann ich erkennen, dass dir gerade alles zu viel wird?"},
- {"t": "Auf meiner Seite", "qs": "Du erzählst einem nahen Menschen von Ärger mit jemand anderem. Was ist dir meistens lieber?", "qo": "{n} erzählt einem nahen Menschen von Ärger mit jemand anderem. Was ist {ihm} meistens lieber?", "a": "Dass der andere erst mal zu mir hält.", "z": "Dass der andere mir ehrlich sagt, wie er es sieht.", "ka": "Rückhalt", "kz": "Ehrliche Meinung", "ao": "Dass der andere erst mal zu {ihm} hält.", "zo": "Dass der andere {ihm} ehrlich sagt, wie er es sieht.", "g": "Gab es eine Situation, in der du dir von mir etwas anderes gewünscht hättest?"},
- {"t": "Humor", "qs": "Ein schwerer Moment, zum Beispiel nach einer schlechten Nachricht. Was ist dir dann meistens lieber?", "qo": "{n} hat einen schweren Moment, zum Beispiel nach einer schlechten Nachricht. Was ist {ihm} dann meistens lieber?", "a": "Wenn jemand mit etwas Humor die Stimmung leichter macht.", "z": "Wenn alle ernst bleiben.", "ka": "Etwas Humor", "kz": "Ernst bleiben", "ao": "Wenn jemand mit etwas Humor die Stimmung leichter macht.", "zo": "Wenn alle ernst bleiben.", "g": "Worüber konntest du in einer schweren Zeit trotzdem lachen?"},
- {"t": "Aus der Hand geben", "qs": "Jemand übernimmt eine Aufgabe, die sonst du machst, und macht sie anders als du.", "qo": "Jemand übernimmt eine Aufgabe, die sonst {n} macht, und macht sie anders als {er}.", "a": "Das ist mir meistens recht so.", "z": "Ich sehe sofort, was ich anders gemacht hätte.", "ka": "Passt so", "kz": "Unterschiede sehen", "ao": "Das ist {ihm} meistens recht so.", "zo": "{Er} sieht sofort, was {er} anders gemacht hätte.", "g": "Wobei fällt es dir schwer, mir etwas zu überlassen?"},
- {"t": "Nach dem Streit", "qs": "Ein Streit mit einem nahen Menschen ist beigelegt. Ihr habt euch wieder vertragen. Wie ist es danach meistens in dir?", "qo": "Ein Streit zwischen {n} und einem nahen Menschen ist beigelegt. Die beiden haben sich wieder vertragen. Wie ist es danach meistens in {ihm}?", "a": "Dann ist es auch innen vorbei.", "z": "Es klingt noch eine Weile nach.", "ka": "Innen vorbei", "kz": "Klingt nach", "ao": "Dann ist es auch innen vorbei.", "zo": "Es klingt noch eine Weile in {ihm} nach.", "g": "Woran würde ich merken, dass es in dir noch nachklingt?"},
- {"t": "Kritik", "qs": "Ein naher Mensch sagt dir etwas Kritisches, und im Grunde stimmt es. Was kommt bei dir meistens zuerst?", "qo": "Ein naher Mensch sagt {n} etwas Kritisches, und im Grunde stimmt es. Was kommt bei {ihm} meistens zuerst?", "a": "Der Kopf: Ich überlege, ob es stimmt.", "z": "Das Gefühl: Es trifft mich erst mal.", "ka": "Erst der Kopf", "kz": "Erst das Gefühl", "ao": "Der Kopf: {Er} überlegt, ob es stimmt.", "zo": "Das Gefühl: Es trifft {ihn} erst mal.", "g": "Wie kann ich dir etwas Kritisches sagen, damit es gut bei dir ankommt?"},
- {"t": "Was ankommt", "qs": "Was berührt dich meistens mehr?", "qo": "Was berührt {n} meistens mehr?", "a": "Wenn jemand an etwas Kleines denkt, das ich mal nebenbei erwähnt habe.", "z": "Wenn sich jemand Zeit nur für mich nimmt.", "ka": "An Kleines denken", "kz": "Ungeteilte Zeit", "ao": "Wenn jemand an etwas Kleines denkt, das {er} mal nebenbei erwähnt hat.", "zo": "Wenn sich jemand Zeit nur für {ihn} nimmt.", "g": "Was hat dir zuletzt gezeigt, dass du mir wichtig bist?"},
- {"t": "Wohin die Gedanken gehen", "qs": "Wenn du die Gedanken einfach laufen lässt: Wo sind sie meistens?", "qo": "Wenn {n} die Gedanken einfach laufen lässt: Wo sind sie meistens?", "a": "Bei dem, was kommt, und wo ich hinwill.", "z": "Bei dem, was gerade ist.", "ka": "Beim Kommenden", "kz": "Beim Jetzt", "ao": "Bei dem, was kommt, und wo {er} hinwill.", "zo": "Bei dem, was gerade ist.", "g": "Was wünschst du dir für die nächsten zehn Jahre?"},
- {"t": "Was schlimmer wäre", "qs": "Was wäre für dich schlimmer?", "qo": "Was wäre für {n} schlimmer?", "a": "Nicht mehr gebraucht zu werden.", "z": "Nicht mehr frei zu sein.", "ka": "Nicht gebraucht", "kz": "Nicht frei", "ao": "Nicht mehr gebraucht zu werden.", "zo": "Nicht mehr frei zu sein.", "g": "Wann hast du dich zuletzt richtig gebraucht gefühlt, und wann richtig frei?"},
- {"t": "Unausgesprochene Wünsche", "qs": "Du wünschst dir etwas von einem nahen Menschen, zum Beispiel Zeit, Hilfe oder eine Umarmung. Was ist dir lieber?", "qo": "{n} wünscht sich etwas von einem nahen Menschen, zum Beispiel Zeit, Hilfe oder eine Umarmung. Was ist {ihm} lieber?", "a": "Ich sage es lieber selbst.", "z": "Ich finde es schöner, wenn der andere es von selbst merkt.", "ka": "Selbst sagen", "kz": "Von selbst merken", "ao": "{Er} sagt es lieber selbst.", "zo": "{Er} findet es schöner, wenn der andere es von selbst merkt.", "g": "Was wünschst du dir manchmal von mir, ohne es zu sagen?"}
-];
-var GEDANKEN=[
- {"t": "Der Traum", "q": "Stell dir vor, dein bisheriges Leben war ein Traum. Du kannst aufwachen, in ein echtes Leben, das du nicht kennst. Oder du träumst weiter.", "a": "Aufwachen", "z": "Weiterträumen", "g": "Was aus deinem jetzigen Leben würdest du am meisten vermissen?"},
- {"t": "Die Pille", "q": "Stell dir vor, eine Pille macht dich dauerhaft zufrieden mit deinem Leben. Sonst ändert sich nichts, nur das Gefühl.", "a": "Ich nehme sie", "z": "Ich lasse sie liegen", "g": "Was würde dich zufriedener machen, wenn du ehrlich bist?"},
- {"t": "Hundert Tage", "q": "Du darfst wählen: denselben richtig guten Tag hundertmal erleben oder hundert verschiedene Tage, von denen die Hälfte mies ist.", "a": "Hundertmal der gute Tag", "z": "Hundert verschiedene Tage", "g": "Wie sähe dein richtig guter Tag aus?"},
- {"t": "Eine einzige Möglichkeit", "q": "Du bekommst eine einzige Möglichkeit, und du musst dich entscheiden.", "a": "Meine Zukunft kennen", "z": "Eine Sache in der Vergangenheit ändern", "g": "Magst du erzählen, was du wissen oder ändern würdest?"},
- {"t": "Verstehen", "q": "Einmal im Leben darfst du dir eines wünschen.", "a": "Einen Menschen ganz verstehen", "z": "Von einem Menschen ganz verstanden werden", "g": "Wo fühlst du dich von mir verstanden, und wo noch nicht?"},
- {"t": "Danach", "q": "Stell dir vor, es gäbe einen sicheren Beweis, dass es nach dem Tod weitergeht.", "a": "Erleichterung", "z": "Beunruhigung", "g": "Hat sich dein Blick darauf im Lauf der Zeit verändert?"}
+var BLOECKE=[{"typ": "karte", "n": 6}, {"typ": "gedanke", "n": 4}, {"typ": "karte", "n": 5}, {"typ": "gedanke", "n": 4}, {"typ": "karte", "n": 6}, {"typ": "gedanke", "n": 3}];
+var KARTEN=[
+ {"t": "Allein", "qs": "Ein ganzes Wochenende allein zu Hause.", "qo": "{n} hat ein ganzes Wochenende allein zu Hause.", "a": "„Herrlich.“", "z": "„Spätestens Samstagabend rufe ich wen an.“", "ao": "„Herrlich.“", "zo": "„Spätestens Samstagabend rufe ich wen an.“", "ka": "Herrlich", "kz": "Jemanden anrufen", "gd": 0, "g": ""},
+ {"t": "Geld übrig", "qs": "Am Monatsende sind unerwartet 300 Euro übrig.", "qo": "Bei {n} sind am Monatsende unerwartet 300 Euro übrig.", "a": "Ich gönne mir etwas.", "z": "Es kommt aufs Konto.", "ao": "{Er} gönnt sich etwas.", "zo": "Es kommt aufs Konto.", "ka": "Etwas gönnen", "kz": "Aufs Konto", "gd": 0, "g": ""},
+ {"t": "Spülmaschine", "qs": "Jemand räumt die Spülmaschine ein. Anders als du.", "qo": "Jemand räumt die Spülmaschine ein. Anders als {n}.", "a": "„Hauptsache, sie ist voll.“", "z": "„Da muss ich nachher noch mal ran.“", "ao": "„Hauptsache, sie ist voll.“", "zo": "„Da muss ich nachher noch mal ran.“", "ka": "Hauptsache voll", "kz": "Noch mal ran", "gd": 0, "g": ""},
+ {"t": "Geschenk", "qs": "Du packst ein Geburtstagsgeschenk aus. Was freut dich mehr?", "qo": "{n} packt ein Geburtstagsgeschenk aus. Was freut {ihn} mehr?", "a": "Etwas, womit ich nie gerechnet hätte.", "z": "Genau das, was ich mir gewünscht habe.", "ao": "Etwas, womit {er} nie gerechnet hätte.", "zo": "Genau das, was {er} sich gewünscht hat.", "ka": "Überraschung", "kz": "Wunschgeschenk", "gd": 0, "g": ""},
+ {"t": "Urlaub", "qs": "Erster Urlaubstag, du bist gerade angekommen. Worauf hast du Lust?", "qo": "Erster Urlaubstag, {n} ist gerade angekommen. Worauf hat {er} Lust?", "a": "Ich will gleich los und viel sehen.", "z": "Ich will erst mal ankommen und nichts müssen.", "ao": "{Er} will gleich los und viel sehen.", "zo": "{Er} will erst mal ankommen und nichts müssen.", "ka": "Gleich los", "kz": "Erst ankommen", "gd": 0, "g": ""},
+ {"t": "Trauriger Film", "qs": "Ein trauriger Film ist zu Ende.", "qo": "{n} hat gerade einen traurigen Film zu Ende gesehen.", "a": "Er hängt mir noch eine Weile nach.", "z": "Ich bin schnell wieder im Hier und Jetzt.", "ao": "Der Film hängt {ihm} noch eine Weile nach.", "zo": "{Er} ist schnell wieder im Hier und Jetzt.", "ka": "Hängt nach", "kz": "Schnell wieder da", "gd": 0, "g": ""},
+ {"t": "Hundert Tage", "qs": "Du darfst wählen: denselben richtig guten Tag hundertmal erleben oder hundert verschiedene Tage, von denen die Hälfte mies ist.", "qo": "{n} darf wählen: denselben richtig guten Tag hundertmal erleben oder hundert verschiedene Tage, von denen die Hälfte mies ist.", "a": "Hundertmal der gute Tag", "z": "Hundert verschiedene Tage", "ao": "Hundertmal der gute Tag", "zo": "Hundert verschiedene Tage", "ka": "Der gute Tag", "kz": "Hundert verschiedene", "gd": 1, "g": "Wie sähe dein richtig guter Tag aus?"},
+ {"t": "Lügen", "qs": "Ab morgen kannst du nie mehr lügen. Oder du erkennst nie mehr, wenn dich jemand anlügt.", "qo": "Ab morgen kann {n} nie mehr lügen. Oder {er} erkennt nie mehr, wenn {ihn} jemand anlügt.", "a": "Nie mehr lügen", "z": "Lügen nicht mehr erkennen", "ao": "Nie mehr lügen", "zo": "Lügen nicht mehr erkennen", "ka": "Nie mehr lügen", "kz": "Lügen nicht erkennen", "gd": 1, "g": ""},
+ {"t": "Noch einmal", "qs": "Du darfst ein Jahr deines Lebens noch einmal erleben, genau so, wie es war.", "qo": "{n} darf ein Jahr {sein}es Lebens noch einmal erleben, genau so, wie es war.", "a": "„Sofort.“", "z": "„Einmal reicht.“", "ao": "„Sofort.“", "zo": "„Einmal reicht.“", "ka": "Sofort", "kz": "Einmal reicht", "gd": 1, "g": "Welches Jahr wäre es?"},
+ {"t": "Danach", "qs": "Stell dir vor, es gäbe einen sicheren Beweis, dass es nach dem Tod weitergeht. Wie, weiß niemand.", "qo": "Stell dir vor, es gäbe einen sicheren Beweis, dass es nach dem Tod weitergeht. Wie, weiß niemand.", "a": "Das beruhigt mich.", "z": "Das ändert nichts für mich.", "ao": "Das beruhigt {ihn}.", "zo": "Das ändert nichts für {ihn}.", "ka": "Beruhigt", "kz": "Ändert nichts", "gd": 1, "g": "Hat sich dein Blick darauf im Lauf der Zeit verändert?"},
+ {"t": "Bauch oder Kopf", "qs": "Du stehst vor einer großen Entscheidung. Was gibt am Ende den Ausschlag?", "qo": "{n} steht vor einer großen Entscheidung. Was gibt am Ende den Ausschlag?", "a": "Mein Bauchgefühl.", "z": "Die besseren Gründe.", "ao": "{Sein} Bauchgefühl.", "zo": "Die besseren Gründe.", "ka": "Bauchgefühl", "kz": "Bessere Gründe", "gd": 0, "g": ""},
+ {"t": "Neue Wohnung", "qs": "Du bist gerade in eine neue Wohnung gezogen.", "qo": "{n} ist gerade in eine neue Wohnung gezogen.", "a": "Ich fühle mich schnell zu Hause.", "z": "Es dauert eine Weile, bis es sich nach meinem anfühlt.", "ao": "{Er} fühlt sich schnell zu Hause.", "zo": "Es dauert eine Weile, bis es sich für {ihn} nach {sein}em anfühlt.", "ka": "Schnell zu Hause", "kz": "Braucht eine Weile", "gd": 0, "g": "Wo hast du dich am schnellsten zu Hause gefühlt, und wo nie richtig?"},
+ {"t": "Warten", "qs": "Du wartest auf eine wichtige Zusage. Tun lässt sich nichts mehr.", "qo": "{n} wartet auf eine wichtige Zusage. Tun lässt sich nichts mehr.", "a": "Ich denke zwischendurch kaum daran.", "z": "Es läuft im Kopf die ganze Zeit mit.", "ao": "{Er} denkt zwischendurch kaum daran.", "zo": "Es läuft bei {ihm} im Kopf die ganze Zeit mit.", "ka": "Kaum dran denken", "kz": "Läuft immer mit", "gd": 0, "g": ""},
+ {"t": "Geschafft", "qs": "Du hast etwas geschafft, worauf du lange hingearbeitet hast. Am Abend danach:", "qo": "{n} hat etwas geschafft, worauf {er} lange hingearbeitet hat. Am Abend danach:", "a": "Ich genieße es einfach.", "z": "Ich denke schon an das Nächste.", "ao": "{Er} genießt es einfach.", "zo": "{Er} denkt schon an das Nächste.", "ka": "Einfach genießen", "kz": "Schon beim Nächsten", "gd": 0, "g": ""},
+ {"t": "Kritik", "qs": "Ein naher Mensch kritisiert dich, und im Grunde hat er recht. Was kommt zuerst?", "qo": "Ein naher Mensch kritisiert {n}, und im Grunde hat er recht. Was kommt bei {ihm} zuerst?", "a": "Ich überlege, ob es stimmt.", "z": "Es trifft mich erst mal.", "ao": "{Er} überlegt, ob es stimmt.", "zo": "Es trifft {ihn} erst mal.", "ka": "Erst überlegen", "kz": "Trifft erst mal", "gd": 0, "g": "Wie kann ich dir etwas Kritisches sagen, damit es gut ankommt?"},
+ {"t": "Der Traum", "qs": "Stell dir vor, dein bisheriges Leben war ein Traum. Du kannst aufwachen, in ein echtes Leben, das du nicht kennst. Oder du träumst weiter.", "qo": "Stell dir vor, das bisherige Leben von {n} war ein Traum. {Er} kann aufwachen, in ein echtes Leben, das {er} nicht kennt. Oder {er} träumt weiter.", "a": "Aufwachen", "z": "Weiterträumen", "ao": "Aufwachen", "zo": "Weiterträumen", "ka": "Aufwachen", "kz": "Weiterträumen", "gd": 1, "g": "Was aus deinem jetzigen Leben würdest du am meisten vermissen?"},
+ {"t": "Löschen", "qs": "Du darfst die schmerzhafteste Erinnerung deines Lebens löschen.", "qo": "{n} darf die schmerzhafteste Erinnerung {sein}es Lebens löschen.", "a": "Löschen", "z": "Behalten", "ao": "Löschen", "zo": "Behalten", "ka": "Löschen", "kz": "Behalten", "gd": 1, "g": ""},
+ {"t": "Die Pille", "qs": "Stell dir vor, eine Pille macht dich dauerhaft zufrieden mit deinem Leben. Sonst ändert sich nichts, nur das Gefühl.", "qo": "Stell dir vor, eine Pille macht {n} dauerhaft zufrieden mit {sein}em Leben. Sonst ändert sich nichts, nur das Gefühl.", "a": "Ich nehme sie", "z": "Ich lasse sie liegen", "ao": "{Er} nimmt sie", "zo": "{Er} lässt sie liegen", "ka": "Nehmen", "kz": "Liegen lassen", "gd": 1, "g": "Was würde dich zufriedener machen, wenn du ehrlich bist?"},
+ {"t": "Eins von beiden", "qs": "Du darfst eines davon haben.", "qo": "{n} darf eines davon haben.", "a": "Ein Blick auf mein Leben in zehn Jahren", "z": "Eine Entscheidung von früher anders treffen", "ao": "Ein Blick auf {sein} Leben in zehn Jahren", "zo": "Eine Entscheidung von früher anders treffen", "ka": "Blick voraus", "kz": "Anders entscheiden", "gd": 1, "g": "Magst du erzählen, was du sehen oder ändern würdest?"},
+ {"t": "Ungeklärt", "qs": "Ein Streit ist am Abend noch nicht geklärt.", "qo": "{n} hatte Streit, und am Abend ist er noch nicht geklärt.", "a": "Ich schlafe schlecht, bis es geklärt ist.", "z": "Ich schlafe trotzdem gut.", "ao": "{Er} schläft schlecht, bis es geklärt ist.", "zo": "{Er} schläft trotzdem gut.", "ka": "Schlecht schlafen", "kz": "Trotzdem gut schlafen", "gd": 0, "g": "Was hilft dir in einem Streit mit mir, und was macht es schlimmer?"},
+ {"t": "Nach der Beerdigung", "qs": "Nach einer Beerdigung sitzt die Familie zusammen. Jemand erzählt eine lustige Geschichte über den Verstorbenen.", "qo": "Nach einer Beerdigung sitzt die Familie zusammen, {n} ist dabei. Jemand erzählt eine lustige Geschichte über den Verstorbenen.", "a": "Das tut mir gut.", "z": "Das ist mir zu früh.", "ao": "Das tut {ihm} gut.", "zo": "Das ist {ihm} zu früh.", "ka": "Tut gut", "kz": "Zu früh", "gd": 0, "g": ""},
+ {"t": "Umarmung", "qs": "Du hättest gerade gern eine Umarmung.", "qo": "{n} hätte gerade gern eine Umarmung.", "a": "Ich frage einfach danach.", "z": "Ich zeige es, ohne zu fragen.", "ao": "{Er} fragt einfach danach.", "zo": "{Er} zeigt es, ohne zu fragen.", "ka": "Danach fragen", "kz": "Ohne Worte zeigen", "gd": 0, "g": "Was wünschst du dir manchmal von mir, ohne es zu sagen?"},
+ {"t": "Diagnose", "qs": "Du bekommst eine ernste Diagnose.", "qo": "{n} bekommt eine ernste Diagnose.", "a": "Ich rede sofort darüber.", "z": "Ich mache es erst mit mir selbst aus.", "ao": "{Er} redet sofort darüber.", "zo": "{Er} macht es erst mit sich selbst aus.", "ka": "Sofort reden", "kz": "Erst allein klären", "gd": 0, "g": "Wem würdest du es als Erstes sagen?"},
+ {"t": "Was berührt", "qs": "Was berührt dich mehr?", "qo": "Was berührt {n} mehr?", "a": "Jemand denkt an eine Kleinigkeit, die ich vor Wochen nebenbei erwähnt habe.", "z": "Jemand nimmt sich einen ganzen Tag nur für mich.", "ao": "Jemand denkt an eine Kleinigkeit, die {er} vor Wochen nebenbei erwähnt hat.", "zo": "Jemand nimmt sich einen ganzen Tag nur für {ihn}.", "ka": "An Kleines denken", "kz": "Ein ganzer Tag", "gd": 0, "g": "Was hat dir zuletzt gezeigt, dass du mir wichtig bist?"},
+ {"t": "Zwischen uns", "qs": "Denkst du oft darüber nach, wie es zwischen uns läuft?", "qo": "Denkt {n} oft darüber nach, wie es zwischen euch läuft?", "a": "Ja, ziemlich oft.", "z": "Selten, es läuft einfach.", "ao": "Ja, ziemlich oft.", "zo": "Selten, es läuft einfach.", "ka": "Ziemlich oft", "kz": "Läuft einfach", "gd": 0, "g": "Was läuft gerade gut zwischen uns?"},
+ {"t": "Was alle denken", "qs": "Du erfährst ein einziges Mal, was alle Menschen, die dich kennen, wirklich über dich denken.", "qo": "{n} erfährt ein einziges Mal, was alle Menschen, die {ihn} kennen, wirklich über {ihn} denken.", "a": "Ich will es wissen", "z": "Das muss ich nicht wissen", "ao": "{Er} will es wissen", "zo": "Das muss {er} nicht wissen", "ka": "Wissen wollen", "kz": "Nicht nötig", "gd": 1, "g": "Was glaubst du, denke ich über dich?"},
+ {"t": "Grabstein", "qs": "Auf deinem Grabstein steht ein einziger Satz.", "qo": "Auf dem Grabstein von {n} steht ein einziger Satz.", "a": "„Hat viel erlebt.“", "z": "„Hat viel geschafft.“", "ao": "„Hat viel erlebt.“", "zo": "„Hat viel geschafft.“", "ka": "Viel erlebt", "kz": "Viel geschafft", "gd": 1, "g": ""},
+ {"t": "Verstehen", "qs": "Einmal im Leben darfst du dir eines wünschen.", "qo": "Einmal im Leben darf {n} sich eines wünschen.", "a": "Einen Menschen ganz verstehen", "z": "Von einem Menschen ganz verstanden werden", "ao": "Einen Menschen ganz verstehen", "zo": "Von einem Menschen ganz verstanden werden", "ka": "Ganz verstehen", "kz": "Verstanden werden", "gd": 1, "g": "Wo fühlst du dich von mir verstanden, und wo noch nicht?"}
 ];
 /* DATEN-ENDE */
-var PRON={er:{Er:"Er",er:"er",ihn:"ihn",ihm:"ihm",sein:"sein"},sie:{Er:"Sie",er:"sie",ihn:"sie",ihm:"ihr",sein:"ihr"}};
+var PRON={er:{Er:"Er",er:"er",ihn:"ihn",ihm:"ihm",sein:"sein",Sein:"Sein"},sie:{Er:"Sie",er:"sie",ihn:"sie",ihm:"ihr",sein:"ihr",Sein:"Ihr"}};
 /* Setzt Name und Pronomen ein. Unbekannte Platzhalter bleiben stehen, damit der Round-Trip sie findet. */
 function fill(text,name,pron){
   var P=PRON[pron]||PRON.er;
-  return String(text).replace(/\{(n|Er|er|ihn|ihm|sein)\}/g,function(m,k){return k==="n"?name:P[k];});
+  return String(text).replace(/\{(n|Er|er|ihn|ihm|sein|Sein)\}/g,function(m,k){return k==="n"?name:P[k];});
 }
-var N=ITEMS.length, NG=GEDANKEN.length, MAX_SKIP=4;
+var N=KARTEN.length;
+var NG=KARTEN.filter(function(k){return !!k.gd;}).length, NK=N-NG;
+/* Blöcke: Startindex und Länge. Ein Block ist entweder Alltagskarten oder Gedankenexperimente. */
+var STARTS=[];(function(){var s=0;BLOECKE.forEach(function(b){STARTS.push(s);s+=b.n;});})();
+function isG(i){return !!(KARTEN[i]&&KARTEN[i].gd);}
+function blockIndex(i){for(var b=STARTS.length-1;b>=0;b--)if(i>=STARTS[b])return b;return 0;}
+function isBlockStart(i){return STARTS.indexOf(i)>=0;}
+/* Vor jedem Block mit Gedankenexperimenten kommt ein Einstieg. */
+function needsIntro(i){return i===0||(i<N&&isBlockStart(i)&&isG(i));}
+function isLastBlock(i){return blockIndex(i)===BLOECKE.length-1;}
 
 function tc(ms){return ms<2000?0:ms<5000?1:ms<15000?2:3;}
 function BitW(){this.b=[];}
@@ -247,27 +233,24 @@ function b64(s){return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+
 function b64b(a){var s="";for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return b64(s);}
 function b64t(s){var bytes=new TextEncoder().encode(s),out="";for(var i=0;i<bytes.length;i++)out+=String.fromCharCode(bytes[i]);return b64(out);}
 
-/* Stufen: 0 ganz klar A, 1 eher A, 2 eher B, 3 ganz klar B. Seite: 0 = A, 1 = B. */
-function seite(l){return l<2?0:1;}
-function stufe(seiteAB,klar){return seiteAB===0?(klar?0:1):(klar?3:2);}
-/* Ein Code pro Person, Aufbau siehe code-format.md (PT16, 30 Byte Nutzdaten) */
+/* Ein Code pro Person, Aufbau siehe code-format.md (PT17, 21 Byte Nutzdaten) */
 function buildCode(S){
-  var w=new BitW(),i,a;
-  for(i=0;i<N;i++)w.p(S.self.ans[i]||0,2);
-  for(i=0;i<NG;i++)w.p(S.self.ged[i]||0,1);
-  for(i=0;i<N;i++){a=S.other.ans[i];w.p((a.s||a.v===null)?4:a.v,3);}
-  for(i=0;i<N+NG;i++)w.p(tc(S.self.t[i]||0),2);
+  var w=new BitW(),i;
+  for(i=0;i<N;i++)w.p(S.self.ans[i]?1:0,1);
+  for(i=0;i<N;i++)w.p(S.other.ans[i]?1:0,1);
+  for(i=0;i<N;i++)w.p(tc(S.self.t[i]||0),2);
   for(i=0;i<N;i++)w.p(tc(S.other.t[i]||0),2);
-  w.p(0,6);
   return PREFIX+"."+b64t(JSON.stringify({n:S.me,p:S.partner}))+"."+b64b(w.out());
 }
-/* Wie oft liegt der Tipp über die andere Person auf derselben Seite wie die eigene Antwort? Ohne „kann ich nicht beurteilen". */
+/* Wie oft ist der Tipp über die andere Person dieselbe Antwort wie die eigene? */
 function projection(S){
-  var same=0,tot=0;
-  for(var i=0;i<N;i++){var a=S.other.ans[i];if(a.s||a.v===null)continue;tot++;if(seite(a.v)===seite(S.self.ans[i]))same++;}
-  return tot?{gleich:same,gesamt:tot,prozent:Math.round(same/tot*100)}:null;
+  var same=0;
+  for(var i=0;i<N;i++)if((S.other.ans[i]?1:0)===(S.self.ans[i]?1:0))same++;
+  return N?{gleich:same,gesamt:N,prozent:Math.round(same/N*100)}:null;
 }
-root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,RUNDEN:RUNDEN,ITEMS:ITEMS,GEDANKEN:GEDANKEN,N:N,NG:NG,MAX_SKIP:MAX_SKIP,tc:tc,seite:seite,stufe:stufe,buildCode:buildCode,projection:projection};
+root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,BLOECKE:BLOECKE,KARTEN:KARTEN,N:N,NG:NG,NK:NK,STARTS:STARTS,
+  isG:isG,blockIndex:blockIndex,isBlockStart:isBlockStart,needsIntro:needsIntro,isLastBlock:isLastBlock,
+  tc:tc,buildCode:buildCode,projection:projection};
 })(typeof window!=="undefined"?window:this);
 </script>
 
@@ -275,36 +258,37 @@ root.EOK={fill:fill,PRON:PRON,VERSION:VERSION,PREFIX:PREFIX,RUNDEN:RUNDEN,ITEMS:
 /* ===== Oberfläche ===== */
 "use strict";
 (function(){
-var K=window.EOK, N=K.N, NG=K.NG, STORE="pt-v16", OLD_STORE="pt-v15";
+var K=window.EOK, N=K.N, STORE="pt-v17", OLD_STORES=["pt-v16","pt-v15"];
 var RM=!!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+var ZAHL=["null","ein","zwei","drei","vier","fünf","sechs"];
 var flashMsg="", S=load()||migrate()||fresh();
 takeInvite();
 
 function arr(n,v){var a=[];for(var i=0;i<n;i++)a.push(typeof v==="function"?v():v);return a;}
-/* Antworten über die andere Person: v = Stufe 0 bis 3 oder null, s = „kann ich nicht beurteilen“. */
-function freshOther(){return {i:0,done:false,ans:arr(N,function(){return {v:null,s:false};}),t:arr(N,0),flip:{}};}
-function fresh(){return {v:K.VERSION,fmt:2,me:"",view:"setup",part:null,cur:-1,intro:false,invite:"",
-  self:{i:0,done:false,ans:arr(N,null),ged:arr(NG,null),t:arr(N+NG,0),flip:{}},people:[]};}
+function freshPart(){return {i:0,done:false,ans:arr(N,null),t:arr(N,0),flip:{}};}
+function fresh(){return {v:K.VERSION,fmt:3,me:"",view:"setup",part:null,cur:-1,intro:false,invite:"",self:freshPart(),people:[]};}
 function load(){
   try{
     var o=JSON.parse(localStorage.getItem(STORE)||"null");
-    if(o&&o.v===K.VERSION&&o.fmt===2)return o;
+    if(o&&o.v===K.VERSION&&o.fmt===3)return o;
   }catch(e){}
   return null;
 }
-/* Stand aus v1.5: Die Fragen sind neu, also beginnen Teil 1 und Teil 2 neu. Name und Personen bleiben. */
+/* Stand aus v1.6 oder v1.5: Die Karten sind neu, also beginnen Teil 1 und Teil 2 neu. Name und Personen bleiben. */
 function migrate(){
-  try{
-    var o=JSON.parse(localStorage.getItem(OLD_STORE)||"null");
-    if(!o||!o.me)return null;
-    var n=fresh();n.me=o.me;n.view="hub";n.invite=o.invite||"";
-    (Array.isArray(o.people)?o.people:(o.partner?[{name:o.partner,pron:o.pron}]:[])).forEach(function(p){
-      if(p&&p.name)n.people.push({name:p.name,pron:p.pron==="sie"?"sie":"er",other:freshOther()});
-    });
-    flashMsg="Es gibt neue Karten. Teil 1 und Teil 2 beginnen neu, deine Personen sind noch da. Alte Codes passen nicht mehr.";
-    try{localStorage.setItem(STORE,JSON.stringify(n));localStorage.removeItem(OLD_STORE);}catch(e){}
-    return n;
-  }catch(e){}
+  for(var s=0;s<OLD_STORES.length;s++){
+    try{
+      var o=JSON.parse(localStorage.getItem(OLD_STORES[s])||"null");
+      if(!o||!o.me)continue;
+      var n=fresh();n.me=o.me;n.view="hub";n.invite=o.invite||"";
+      (Array.isArray(o.people)?o.people:(o.partner?[{name:o.partner,pron:o.pron}]:[])).forEach(function(p){
+        if(p&&p.name)n.people.push({name:p.name,pron:p.pron==="sie"?"sie":"er",other:freshPart()});
+      });
+      flashMsg="Es gibt neue Karten. Teil 1 und Teil 2 beginnen neu, deine Personen sind noch da. Alte Codes passen nicht mehr.";
+      try{localStorage.setItem(STORE,JSON.stringify(n));OLD_STORES.forEach(function(k){localStorage.removeItem(k);});}catch(e){}
+      return n;
+    }catch(e){}
+  }
   return null;
 }
 function codeFor(p){return (S.me&&S.self.done&&p.other.done)?K.buildCode({me:S.me,partner:p.name,self:S.self,other:p.other}):null;}
@@ -315,6 +299,7 @@ function save(){
 function norm(s){return String(s==null?"":s).trim().replace(/\s+/g," ").toLocaleLowerCase("de");}
 function clean(s){return String(s==null?"":s).trim().replace(/\s+/g," ");}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function app(){return document.getElementById("app");}
 function $(id){return document.getElementById(id);}
 function cur(){return S.people[S.cur];}
@@ -362,8 +347,11 @@ function frame(night,dealt){
 function bar(){
   var p=$("bar"), P=partObj();
   if(S.view!=="play"||!P){p.innerHTML="";p.classList.remove("on");return;}
-  var segs=S.part==="self"?K.RUNDEN.concat([NG]):K.RUNDEN, h="", start=0;
-  segs.forEach(function(len){var f=Math.max(0,Math.min(1,(P.i-start)/len));h+='<span class="seg"><i style="width:'+Math.round(f*100)+'%"></i></span>';start+=len;});
+  var h="";
+  K.BLOECKE.forEach(function(b,bi){
+    var start=K.STARTS[bi], f=Math.max(0,Math.min(1,(P.i-start)/b.n));
+    h+='<span class="seg'+(b.typ==="gedanke"?" gd":"")+'"><i style="width:'+Math.round(f*100)+'%"></i></span>';
+  });
   p.innerHTML=h;p.classList.add("on");
 }
 function go(){save();render();}
@@ -372,10 +360,8 @@ function render(){
   if(S.view==="add")return addPerson();
   if(S.view==="person"&&cur())return person();
   if(S.view==="play"&&(S.part==="self"||cur())){
-    var P=partObj();
     if(S.intro)return intro();
-    if(S.part==="self")return P.i<N?selfQ():gedQ();
-    return otherQ();
+    return playQ();
   }
   return hub();
 }
@@ -415,21 +401,21 @@ function setup(){
 }
 
 /* ---------- Übersicht ---------- */
-function status(P,total){return P.done?"Fertig":P.i>0?"Weiter bei Karte "+(P.i+1)+" von "+total:"Starten";}
+function status(P){return P.done?"Fertig":P.i>0?"Weiter bei Karte "+(P.i+1)+" von "+N:"Starten";}
 function hub(){
   S.view="hub";S.part=null;S.cur=-1;frame(false,false);
   var s=S.self, inv=S.invite&&findPerson(S.invite)<0&&norm(S.invite)!==norm(S.me)?S.invite:"";
   var people=S.people.map(function(p,i){
-    var st=!s.done?"Nach Teil 1":p.other.done?"Code bereit":status(p.other,N);
+    var st=!s.done?"Nach Teil 1":p.other.done?"Code bereit":status(p.other);
     return '<button class="part'+(p.other.done?" fin":"")+(!s.done?" wait":"")+'" data-i="'+i+'"><span class="pk">Teil 2</span><span class="pt">Über '+esc(p.name)+'</span>'+
-      '<span class="pm"><span>24 Fragen</span><span class="ps">'+st+'</span></span></button>';
+      '<span class="pm"><span>'+N+' Karten</span><span class="ps">'+st+'</span></span></button>';
   }).join("");
   app().innerHTML='<div class="screen">'+
     '<p class="kicker" style="margin-top:34px">Entweder oder</p>'+
     '<h2>Hallo '+esc(S.me)+'</h2>'+
     (flashMsg?'<p class="flash" role="status">'+esc(flashMsg)+'</p>':'')+
     (inv?'<div class="invite"><p>'+esc(inv)+' hat dich eingeladen.</p><button class="btn" id="accept">Mit '+esc(inv)+' spielen</button><div class="links" style="margin-top:4px"><button class="link" id="dismiss">Später</button></div></div>':'')+
-    '<button class="part'+(s.done?" fin":"")+'" id="p1"><span class="pk">Teil 1</span><span class="pt">Über dich</span><span class="pm"><span>24 Fragen, 6 Gedankenexperimente</span><span class="ps">'+status(s,N+NG)+'</span></span></button>'+
+    '<button class="part'+(s.done?" fin":"")+'" id="p1"><span class="pk">Teil 1</span><span class="pt">Über dich</span><span class="pm"><span>'+K.NK+' Karten, '+K.NG+' Gedankenexperimente</span><span class="ps">'+status(s)+'</span></span></button>'+
     '<p class="plab">Mit wem spielst du?</p>'+
     (people||'<p class="lead" style="margin-top:6px">Noch niemand. Füg eine Person hinzu oder schick jemandem deinen Einladungslink.</p>')+
     '<div class="row" style="margin-top:14px"><button class="btn line" id="add">Person hinzufügen</button><button class="btn line" id="invite">Einladen</button></div>'+
@@ -453,12 +439,12 @@ function hub(){
   $("names").onclick=function(){S.view="setup";go();};
   $("reset").onclick=function(){
     if(!confirm("Wirklich alles löschen? Deine Antworten und alle Codes auf diesem Handy sind dann weg."))return;
-    try{localStorage.removeItem(STORE);localStorage.removeItem(OLD_STORE);}catch(e){}S=fresh();lastKey=null;render();
+    try{localStorage.removeItem(STORE);OLD_STORES.forEach(function(k){localStorage.removeItem(k);});}catch(e){}S=fresh();lastKey=null;render();
   };
 }
 function startPart(part,i){
   S.view="play";S.part=part;S.cur=i;var P=partObj();
-  S.intro=(P.i===0)||(part==="self"&&P.i===N);
+  S.intro=K.needsIntro(P.i);
   go();
 }
 
@@ -490,7 +476,7 @@ function addPerson(){
     if(norm(name)===norm(S.me)){w.textContent="Das ist dein eigener Name.";return;}
     if(findPerson(name)>=0){w.textContent="Mit "+S.people[findPerson(name)].name+" spielst du schon.";return;}
     if(!pron){w.textContent="Wähl noch, ob die App über "+name+" mit er oder sie schreibt.";return;}
-    S.people.push({name:name,pron:pron,other:freshOther()});
+    S.people.push({name:name,pron:pron,other:freshPart()});
     if(norm(S.invite)===norm(name))S.invite="";
     S.addName="";
     if(S.self.done)startPart("other",S.people.length-1);
@@ -501,147 +487,100 @@ function addPerson(){
   $("cancel").onclick=function(){S.addName="";S.view="hub";go();};
 }
 
-/* ---------- Einstiege ---------- */
+/* ---------- Einstiege: zu Beginn und vor jedem Block Gedankenexperimente ---------- */
 function intro(){
-  var P=partObj(), night=S.part==="self"&&P.i===N, p=cur(), pa=p?esc(p.name):"", head, card, text, btn, backLabel;
-  if(S.part==="self"&&!night){
-    head="Teil 1 · Über dich";
-    card='Es geht um dich und die Menschen, die dir nahestehen.';
-    text='<p class="lead">Denk an die meisten Fälle. Ausnahmen gibt es immer.</p>'+
-      '<p class="lead">Tipp erst auf die Karte, die eher passt. Dann wählst du, wie deutlich: ganz klar oder eher. Es gibt keine bessere Seite.</p>';
-    btn="Erste Karte ziehen";backLabel="Übersicht";
-  }else if(night){
-    head="Zum Schluss";
-    card='Sechs Gedankenexperimente.';
-    text='<p class="lead">Hier tippt niemand für dich. Die Antworten sind bewusst knapp, das Warum gehört ins Gespräch. Beim Auswerten seht ihr eure beiden Antworten nebeneinander.</p>';
-    btn="Weiter";backLabel="Zurück";
+  var P=partObj(), self=S.part==="self", p=cur(), pa=p?esc(p.name):"";
+  var night=K.isG(P.i), n=K.BLOECKE[K.blockIndex(P.i)].n, head, card, text, btn;
+  if(!night){
+    if(self){
+      head="Teil 1 · Über dich";
+      card="Es geht um dich und die Menschen, die dir nahestehen.";
+      text='<p class="lead">Lies die Szene und tipp auf die Antwort, die besser passt. Dann kommt gleich die nächste Karte.</p>'+
+        '<p class="lead">Wenn beides ein bisschen stimmt: Bauch, nicht Kopf. Es gibt keine bessere Seite.</p>'+
+        '<p class="lead">Zwischendurch kommen Gedankenexperimente. Dann wird es kurz Nacht.</p>';
+    }else{
+      head="Teil 2 · Über "+pa;
+      card="Was trifft eher auf "+pa+" zu?";
+      text='<p class="lead">Dieselben Karten, diesmal mit '+pa+' darin. Tipp auf die Antwort, die eher zu '+pa+' passt.</p>'+
+        '<p class="lead">Auch wenn du dir nicht sicher bist: Bauch, nicht Kopf. Raten gehört dazu.</p>';
+    }
+    btn="Erste Karte ziehen";
   }else{
-    head="Teil 2 · Über "+pa;
-    card='Was trifft eher auf '+pa+' zu?';
-    text='<p class="lead">Dieselben Karten, diesmal mit '+pa+' darin. Wähl die Karte, die eher zu '+pa+' passt, und dann, wie deutlich: ganz klar oder eher.</p>'+
-      '<p class="lead">„Kann ich nicht beurteilen“ geht höchstens '+['null','einmal','zweimal','dreimal','viermal','fünfmal'][K.MAX_SKIP]+'.</p>';
-    btn="Erste Karte ziehen";backLabel="Übersicht";
+    head=K.isLastBlock(P.i)?"Zum Schluss":"Zwischendurch";
+    card=cap(ZAHL[n]||String(n))+" Gedankenexperimente.";
+    text=self?
+      '<p class="lead">Die Antworten sind bewusst knapp, das Warum gehört ins Gespräch.</p>'+
+      '<p class="lead">Auch hier tippt die andere Person, was du wählst.</p>':
+      '<p class="lead">Was würde '+pa+' wählen? Die Antworten sind bewusst knapp, das Warum gehört ins Gespräch.</p>';
+    btn="Weiter";
   }
   frame(night,true);
   app().innerHTML='<div class="screen">'+
-    '<div class="top"><b>'+(S.part==="self"?"Über dich":"Über "+pa)+'</b></div>'+
+    '<div class="top"><b>'+(self?"Über dich":"Über "+pa)+'</b></div>'+
     '<div class="deck"><div class="qcard"><div class="qhead"><span>'+head+'</span></div><p class="qtext m">'+card+'</p></div></div>'+
     '<div class="hand" style="padding-left:4px;padding-right:4px">'+text+'</div>'+
     '<button class="btn" id="go">'+btn+'</button>'+
-    '<div class="foot"><button class="txt" id="back">'+backLabel+'</button></div>'+
+    '<div class="foot"><button class="txt" id="back">'+(P.i===0?"Übersicht":"Zurück")+'</button></div>'+
     '</div>';
   $("go").onclick=function(){S.intro=false;go();};
   $("back").onclick=function(){
-    if(night){S.intro=false;P.i=N-1;go();}
-    else toHub();
+    if(P.i===0)toHub();
+    else{S.intro=false;P.i--;go();}
   };
 }
 
-/* ---------- Karten ---------- */
-/* Fragekarten haben vier Stufen: erst die Karte (A oder B) antippen, dann „eher“ oder „ganz klar“.
-   Gedankenexperimente bleiben bei einem Tipp. Die Reihenfolge von A und B wird pro Karte und Person gemischt. */
+/* ---------- Karten: ein Tipp, dann die nächste ---------- */
+/* Die Reihenfolge von A und B wird pro Karte und Person gemischt. */
 function sizeClass(q){return q.length>100?" l":q.length>65?" m":"";}
 function cardHTML(o){
   var f=flipFor(o.P,o.k), first=f?{t:o.item.z,v:1}:{t:o.item.a,v:0}, second=f?{t:o.item.a,v:0}:{t:o.item.z,v:1};
-  var done=o.chosen!==null&&o.chosen!==undefined;
-  var side=!done?null:o.levels?K.seite(o.chosen):o.chosen, klar=o.chosen===0||o.chosen===3;
-  function ac(x,cls){
-    var sel=side===x.v;
-    var h='<button class="acard '+cls+(sel?" sel":"")+'" data-v="'+x.v+'"'+(o.levels?' aria-expanded="'+sel+'"':'')+'>'+esc(x.t)+'</button>';
-    if(o.levels)h+='<div class="str'+(sel?" on":"")+'" data-for="'+x.v+'"><span class="shint">Wie deutlich?</span>'+
-      '<button class="sbtn" data-l="'+K.stufe(x.v,false)+'" aria-pressed="'+(sel&&!klar)+'">eher</button>'+
-      '<button class="sbtn" data-l="'+K.stufe(x.v,true)+'" aria-pressed="'+(sel&&klar)+'">ganz klar</button></div>';
-    return h;
-  }
+  var done=o.chosen===0||o.chosen===1;
+  function ac(x,cls){return '<button class="acard '+cls+(done&&o.chosen===x.v?" sel":"")+'" data-v="'+x.v+'">'+esc(x.t)+'</button>';}
   return '<div class="screen">'+
     '<div class="top"><b>'+o.who+'</b><button class="txt" id="pause">Pause</button></div>'+
     '<div class="deck"><div class="qcard"><div class="qhead"><span>'+esc(o.label)+'</span><span>'+o.num+'</span></div>'+
       '<p class="qtext'+sizeClass(o.item.q)+'" id="q">'+esc(o.item.q)+'</p></div></div>'+
-    '<div class="hand'+(done?" done":"")+(o.off?" off":"")+'" role="group" aria-labelledby="q">'+(o.ask?'<p class="about">'+o.ask+'</p>':'')+
+    '<div class="hand'+(done?" done":"")+'" role="group" aria-labelledby="q">'+(o.ask?'<p class="about">'+o.ask+'</p>':'')+
       ac(first,"a1")+'<div class="oder" aria-hidden="true">oder</div>'+ac(second,"a2")+
-      (o.extra||"")+
     '</div>'+
     '<div class="foot"><button class="txt" id="back">Zurück</button>'+(o.canNext?'<button class="txt" id="next" style="color:var(--on)">Weiter</button>':'')+'</div>'+
     '</div>';
 }
-function wireCard(onPick,onBack,onNext,levels){
+function playQ(){
+  var self=S.part==="self", p=cur(), P=partObj(), i=P.i, it=K.KARTEN[i], gd=K.isG(i), pa=p?esc(p.name):"";
+  var item=self?{q:it.qs,a:it.a,z:it.z}:{q:K.fill(it.qo,p.name,p.pron),a:K.fill(it.ao,p.name,p.pron),z:K.fill(it.zo,p.name,p.pron)};
+  frame(gd,true);
+  app().innerHTML=cardHTML({P:P,k:(self?"s":"f")+i,item:item,chosen:P.ans[i],
+    ask:self?"":(gd?"Was würde "+pa+" wählen?":"Was trifft eher auf "+pa+" zu?"),
+    who:self?"Über dich":"Über "+pa,label:gd?"Gedankenexperiment":it.t,num:(i+1)+" / "+N,canNext:P.ans[i]!==null});
+  function advance(){
+    addTime(P,i);P.i++;
+    if(P.i>=N){
+      P.done=true;S.part=null;
+      if(self){
+        S.view="hub";
+        flashMsg=S.people.length?"Teil 1 geschafft. Jetzt geht es mit Teil 2 weiter.":"Teil 1 geschafft. Füg jetzt eine Person hinzu oder lade jemanden ein.";
+      }else{S.view="person";flashMsg="Geschafft. Jetzt kann "+p.name+" deinen Code bekommen.";}
+    }else if(K.needsIntro(P.i))S.intro=true;
+    save();later(render);
+  }
   var h=app().querySelector(".hand");
   Array.prototype.forEach.call(h.querySelectorAll(".acard"),function(b){
     b.onclick=function(){
       if(moving)return;
-      var v=+b.dataset.v;
-      h.classList.add("done");h.classList.remove("off");
-      Array.prototype.forEach.call(h.querySelectorAll(".acard"),function(x){x.classList.toggle("sel",x===b);if(levels)x.setAttribute("aria-expanded",String(x===b));});
-      if(!levels){onPick(v);return;}
-      Array.prototype.forEach.call(h.querySelectorAll(".str"),function(r){
-        var on=+r.dataset.for===v;r.classList.toggle("on",on);
-        if(!on)Array.prototype.forEach.call(r.querySelectorAll(".sbtn"),function(x){x.setAttribute("aria-pressed","false");});
-        else if(r.scrollIntoView&&!RM)try{r.scrollIntoView({block:"nearest",behavior:"smooth"});}catch(e){}
-      });
+      h.classList.add("done");
+      Array.prototype.forEach.call(h.querySelectorAll(".acard"),function(x){x.classList.toggle("sel",x===b);});
+      P.ans[i]=+b.dataset.v;advance();
     };
   });
-  Array.prototype.forEach.call(h.querySelectorAll(".sbtn"),function(b){
-    b.onclick=function(){
-      if(moving)return;
-      Array.prototype.forEach.call(h.querySelectorAll(".sbtn"),function(x){x.setAttribute("aria-pressed",String(x===b));});
-      onPick(+b.dataset.l);
-    };
-  });
-  $("back").onclick=function(){if(!moving)onBack();};
-  $("pause").onclick=function(){if(moving)return;var P=partObj();if(!S.intro&&P)addTime(P,P.i);toHub();};
-  if($("next"))$("next").onclick=function(){if(!moving)onNext();};
-}
-
-function selfQ(){
-  var P=S.self, i=P.i, it=K.ITEMS[i];
-  frame(false,true);
-  app().innerHTML=cardHTML({P:P,k:"s"+i,item:{q:it.qs,a:it.a,z:it.z},chosen:P.ans[i],levels:true,who:"Über dich",label:it.t,num:(i+1)+" / "+(N+NG),canNext:P.ans[i]!==null});
-  function advance(){addTime(P,i);P.i++;if(P.i===N)S.intro=true;save();later(render);}
-  wireCard(function(l){P.ans[i]=l;advance();},
-    function(){addTime(P,i);if(i===0)S.intro=true;else P.i--;go();},
-    advance,true);
-}
-function gedQ(){
-  var P=S.self, i=P.i, j=i-N, g=K.GEDANKEN[j];
-  frame(true,true);
-  app().innerHTML=cardHTML({P:P,k:"g"+j,item:g,chosen:P.ged[j],who:"Über dich",label:"Gedankenexperiment",num:(i+1)+" / "+(N+NG),canNext:P.ged[j]!==null});
-  function advance(){
-    addTime(P,i);P.i++;
-    if(P.i>=N+NG){
-      P.done=true;S.view="hub";S.part=null;
-      flashMsg=S.people.length?"Teil 1 geschafft. Jetzt geht es mit Teil 2 weiter.":"Teil 1 geschafft. Füg jetzt eine Person hinzu oder lade jemanden ein.";
-    }
-    save();later(render);
-  }
-  wireCard(function(v){P.ged[j]=v;advance();},
-    function(){addTime(P,i);if(j===0)S.intro=true;else P.i--;go();},
-    advance,false);
-}
-function otherQ(){
-  var p=cur(), P=p.other, i=P.i, it=K.ITEMS[i], a=P.ans[i], pa=esc(p.name);
-  var used=P.ans.filter(function(x){return x.s;}).length, canSkip=a.s||used<K.MAX_SKIP;
-  frame(false,true);
-  var extra='<div class="tools">'+
-    '<button class="chip flag'+(a.s?" on":"")+'" id="skip" aria-pressed="'+a.s+'"'+(canSkip?"":" disabled")+'>'+(a.s?"Doch beantworten":"Kann ich nicht beurteilen")+'</button>'+
-    '</div>'+(used>0?'<p class="note">'+used+' von '+K.MAX_SKIP+' offen gelassen</p>':'');
-  var item={q:K.fill(it.qo,p.name,p.pron),a:K.fill(it.ao,p.name,p.pron),z:K.fill(it.zo,p.name,p.pron)};
-  app().innerHTML=cardHTML({P:P,k:"f"+i,item:item,ask:"Was trifft eher auf "+pa+" zu?",chosen:a.v,levels:true,who:"Über "+pa,label:it.t,num:(i+1)+" / "+N,extra:extra,off:a.s,canNext:a.v!==null||a.s});
-  function advance(){
-    addTime(P,i);P.i++;
-    if(P.i>=N){P.done=true;S.view="person";S.part=null;flashMsg="Geschafft. Jetzt kann "+p.name+" deinen Code bekommen.";}
-    save();later(render);
-  }
-  wireCard(function(l){a.v=l;a.s=false;advance();},
-    function(){addTime(P,i);if(i===0)S.intro=true;else P.i--;go();},
-    advance,true);
-  $("skip").onclick=function(){
+  $("back").onclick=function(){
     if(moving)return;
-    if(a.s){a.s=false;save();render();return;}
-    a.s=true;a.v=null;
-    var h=app().querySelector(".hand");h.classList.add("off");h.classList.remove("done");$("skip").classList.add("on");
-    Array.prototype.forEach.call(h.querySelectorAll(".str"),function(r){r.classList.remove("on");});
-    advance();
+    addTime(P,i);
+    if(K.needsIntro(i))S.intro=true;else P.i--;
+    go();
   };
+  $("pause").onclick=function(){if(moving)return;addTime(P,i);toHub();};
+  if($("next"))$("next").onclick=function(){if(!moving)advance();};
 }
 
 /* ---------- Eine Person: Code, Projektion, Entfernen ---------- */
@@ -658,7 +597,7 @@ function person(){
       '<button class="btn" id="wa">Per WhatsApp schicken</button>'+
       '<div class="row" style="margin-top:10px"><button class="btn line" id="copy">Kopieren</button><button class="btn line" id="dl">Als Datei</button></div>'+
       (pr?'<hr class="rule"><p class="stat">'+pr.prozent+'%</p>'+
-        '<p class="lead">So oft hast du bei '+pa+' dieselbe Seite gewählt wie bei dir selbst, bei '+pr.gleich+' von '+pr.gesamt+' Karten.</p>'+
+        '<p class="lead">So oft hast du bei '+pa+' dieselbe Antwort getippt wie bei dir selbst, bei '+pr.gleich+' von '+pr.gesamt+' Karten.</p>'+
         '<p class="lead">Reiner Zufall läge bei 50 Prozent. Wer deutlich darüber liegt, beschreibt beim Einschätzen ein Stück weit sich selbst. Das passiert jedem, und wer sich ähnlich ist, liegt damit oft sogar richtig.</p>':'')+
       '<hr class="rule"><p class="lead">Wenn der Code von '+pa+' da ist, setzt euch zusammen und deckt auf.</p>'+
       '<a class="btn line" style="margin-top:14px" href="auswertung.html">Zur Auswertung</a>';
@@ -692,13 +631,11 @@ function person(){
   };
 }
 
-/* Tastatur am Laptop: 1/2 oder Pfeile für die Karten, danach E für „eher“ und K für „ganz klar“, Enter für Weiter */
+/* Tastatur am Laptop: 1/2 oder Pfeile für die Karten, Enter für Weiter */
 document.addEventListener("keydown",function(e){
   var tg=e.target&&e.target.tagName;
   if(tg==="INPUT"||tg==="TEXTAREA"||e.metaKey||e.ctrlKey||e.altKey)return;
   if(e.key==="Enter"&&tg!=="BUTTON"&&tg!=="A"){var n=$("next");if(n){e.preventDefault();n.click();}return;}
-  var k=String(e.key).toLowerCase();
-  if(k==="e"||k==="k"){var row=app().querySelector(".str.on");if(row){var bs=row.querySelectorAll(".sbtn");e.preventDefault();bs[k==="e"?0:1].click();}return;}
   var idx=(e.key==="1"||e.key==="ArrowUp"||e.key==="ArrowLeft")?0:(e.key==="2"||e.key==="ArrowDown"||e.key==="ArrowRight")?1:-1;
   if(idx<0)return;
   var cards=app().querySelectorAll(".acard");if(cards[idx]){e.preventDefault();cards[idx].click();}

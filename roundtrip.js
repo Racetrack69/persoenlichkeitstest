@@ -1,65 +1,77 @@
-/* Round-Trip PT16: führt den Kern aus index.html in einer Node-VM aus, erzeugt mit dem echten
-   buildCode() Zufallsdatensätze und prüft sie gegen decoder.js. Aufruf: node roundtrip.js index.html */
+/* Round-Trip für PT17: echter buildCode() aus index.html gegen decoder.js.
+   Aufruf: node roundtrip.js [index.html]
+   Prüft Zufallsdatensätze, Platzhalter in allen Fassungen, Negativfälle, alte Codes und Codes in WhatsApp-Text. */
 "use strict";
-var fs=require("fs"),vm=require("vm"),path=require("path");
-var html=fs.readFileSync(process.argv[2]||path.join(__dirname,"index.html"),"utf8");
-var m=html.match(/<script id="kern">([\s\S]*?)<\/script>/);
-if(!m)throw new Error("Kern-Script in index.html nicht gefunden");
-var ctx={btoa:btoa,TextEncoder:TextEncoder,JSON:JSON,Math:Math,String:String};
+const fs=require("fs"), vm=require("vm"), path=require("path");
+const file=process.argv[2]||path.join(__dirname,"index.html");
+const html=fs.readFileSync(file,"utf8");
+const m=html.match(/<script id="kern">([\s\S]*?)<\/script>/);
+if(!m){console.error("Kern-Script nicht gefunden.");process.exit(1);}
+const ctx={btoa:s=>Buffer.from(s,"binary").toString("base64"),TextEncoder};
 vm.createContext(ctx);vm.runInContext(m[1],ctx);
-var K=ctx.EOK, D=require("./decoder.js");
-if(K.VERSION!=="v1.6"||K.PREFIX!=="PT16")throw new Error("index.html ist nicht v1.6/PT16");
+const K=ctx.EOK, D=require("./decoder.js");
+let fehler=0;
+function check(cond,msg){if(!cond){fehler++;if(fehler<20)console.error("FEHLER:",msg);}}
 
-var TIMES=[0,1999,2000,4999,5000,14999,15000,60000];
-var NAMES=["Anna","Jörg","Zoë","O'Neil","Maria-Luise","Ömer","Björn Bo","李"];
-function pick(a){return a[Math.floor(Math.random()*a.length)];}
-function bit(){return Math.random()<.5?0:1;}
-function lvl(){return Math.floor(Math.random()*4);}
-function tc(ms){return ms<2000?0:ms<5000?1:ms<15000?2:3;}
-function state(){
-  var skips=0,S={me:pick(NAMES),partner:pick(NAMES),self:{ans:[],ged:[],t:[]},other:{ans:[],t:[]}};
-  for(var i=0;i<K.N;i++){
-    S.self.ans.push(lvl());S.self.t.push(pick(TIMES));S.other.t.push(pick(TIMES));
-    if(Math.random()<.12&&skips<K.MAX_SKIP){skips++;S.other.ans.push({v:null,s:true});}
-    else S.other.ans.push({v:lvl(),s:false});
+/* Daten und Blöcke */
+check(K.N===28,"28 Karten erwartet, gefunden "+K.N);
+check(K.NG===11&&K.NK===17,"17 Karten und 11 Gedankenexperimente erwartet");
+check(K.BLOECKE.reduce((s,b)=>s+b.n,0)===K.N,"Blöcke passen nicht zur Kartenzahl");
+check(D.N===K.N,"Decoder kennt eine andere Kartenzahl");
+check(K.PREFIX===D.PREFIX,"Präfix in index.html und decoder.js verschieden");
+K.BLOECKE.forEach((b,bi)=>{for(let i=K.STARTS[bi];i<K.STARTS[bi]+b.n;i++)check(K.isG(i)===(b.typ==="gedanke"),"Typ von Karte "+(i+1)+" passt nicht zum Block");});
+const intros=[];for(let i=0;i<K.N;i++)if(K.needsIntro(i))intros.push(i);
+check(JSON.stringify(intros)==="[0,6,15,25]","Einstiege an falscher Stelle: "+intros);
+
+/* Platzhalter: In keiner Fassung darf nach dem Einsetzen eine geschweifte Klammer übrig bleiben. */
+["er","sie"].forEach(pr=>K.KARTEN.forEach((k,i)=>{
+  ["qo","ao","zo"].forEach(f=>{const t=K.fill(k[f],"Ben",pr);check(!/[{}]/.test(t),"Platzhalter übrig in Karte "+(i+1)+" "+f+": "+t);});
+  ["qs","a","z"].forEach(f=>check(!/[{}]/.test(k[f]),"Klammer in Karte "+(i+1)+" "+f));
+}));
+
+/* Zufallsdatensätze */
+function rnd(n){return Math.floor(Math.random()*n);}
+const names=["Anna","Ben","Jörg-Ülrich","Ana María","李","Zoë","O'Neill","A".repeat(40)];
+const ms=[0,500,1999,2000,4999,5000,14999,15000,90000];
+for(let r=0;r<3000;r++){
+  const self={ans:[],t:[]}, other={ans:[],t:[]};
+  for(let i=0;i<K.N;i++){self.ans.push(rnd(2));other.ans.push(rnd(2));self.t.push(ms[rnd(ms.length)]);other.t.push(ms[rnd(ms.length)]);}
+  const me=names[rnd(names.length)], partner=names[rnd(names.length)];
+  const code=K.buildCode({me,partner,self,other});
+  let d;
+  try{d=D.decode(code);}catch(e){check(false,"Decode warf: "+e.message+" bei "+code);continue;}
+  check(d.name===me&&d.partner===partner,"Namen falsch: "+d.name+"/"+d.partner);
+  for(let i=0;i<K.N;i++){
+    check(d.self.items[i].value===self.ans[i],"self "+i);
+    check(d.other.items[i].value===other.ans[i],"other "+i);
+    check(d.self.items[i].time===K.tc(self.t[i]),"tSelf "+i);
+    check(d.other.items[i].time===K.tc(other.t[i]),"tOther "+i);
   }
-  for(var j=0;j<K.NG;j++){S.self.ged.push(bit());S.self.t.push(pick(TIMES));}
-  return S;
+  check(code.split(".")[2].length===28,"Nutzdaten sollen 28 Zeichen haben, sind "+code.split(".")[2].length);
 }
-function eq(a,b,msg){if(a!==b)throw new Error(msg+": erwartet "+JSON.stringify(b)+", bekommen "+JSON.stringify(a));}
 
-/* Stufen-Helfer */
-eq([0,1,2,3].map(K.seite).join(""),"0011","seite");
-eq([K.stufe(0,true),K.stufe(0,false),K.stufe(1,false),K.stufe(1,true)].join(""),"0123","stufe");
+/* Negativfälle */
+const good=K.buildCode({me:"Anna",partner:"Ben",self:{ans:Array(28).fill(1),t:Array(28).fill(3000)},other:{ans:Array(28).fill(0),t:Array(28).fill(3000)}});
+function throws(c,msg){let t=false;try{D.decode(c);}catch(e){t=true;}check(t,msg);}
+throws(good.slice(0,-2),"Abgeschnittener Code muss scheitern");
+throws(good+"AA","Zu langer Code muss scheitern");
+throws("PT16"+good.slice(4),"Alter Präfix muss scheitern");
+throws("PT17.xx.yy","Kaputter Header muss scheitern");
+throws("Hallo","Text muss scheitern");
 
-var ok=0,fails=0,sample=null;
-for(var n=0;n<3000;n++){
-  var S=state(),code=K.buildCode(S);
-  try{
-    var d=D.decode(code);
-    eq(d.name,S.me,"name");eq(d.partner,S.partner,"partner");
-    for(var i=0;i<K.N;i++){
-      var s=d.self.items[i];
-      eq(s.level,S.self.ans[i],"self "+i);eq(s.value,S.self.ans[i]<2?0:1,"self Seite "+i);eq(s.klar,S.self.ans[i]===0||S.self.ans[i]===3,"self klar "+i);
-      eq(s.time,tc(S.self.t[i]),"self t "+i);
-      var a=S.other.ans[i],o=d.other.items[i];
-      eq(o.skipped,a.s,"skip "+i);eq(o.level,a.s?null:a.v,"other "+i);eq(o.value,a.s?null:(a.v<2?0:1),"other Seite "+i);
-      eq(o.time,tc(S.other.t[i]),"other t "+i);
-    }
-    for(var j=0;j<K.NG;j++){eq(d.self.gedanken[j].value,S.self.ged[j],"ged "+j);eq(d.self.gedanken[j].time,tc(S.self.t[K.N+j]),"ged t "+j);}
-    if(d.warnings.length)throw new Error("Warnungen: "+d.warnings.join("; "));
-    sample=sample||code;ok++;
-  }catch(e){fails++;if(fails<=5)console.error("FEHLER: "+e.message+"\n  "+code);}
-}
-console.log("Round-Trip: "+ok+" Codes ok, "+fails+" Fehler");
+/* WhatsApp-Text mit mehreren Codes, einem doppelten und einem alten */
+const other=K.buildCode({me:"Ben",partner:"Anna",self:{ans:Array(28).fill(0),t:Array(28).fill(0)},other:{ans:Array(28).fill(1),t:Array(28).fill(0)}});
+const text="Entweder oder: mein Code für dich, Ben.\n\n"+good+"\n\nZum Aufdecken: https://x.github.io/auswertung.html\n"+other+"\n"+good+"\nalt: PT16.eyJuIjoiQSJ9.AAAA";
+const all=D.decodeAll(text);
+check(all.length===3,"Drei Codes im Text erwartet (einer doppelt), gefunden "+all.length);
+check(all.every(r=>r.ok),"Keine fehlerhaften Codes erwartet");
+check(new Set(all.map(r=>r.data.name)).size===2,"Zwei Personen im Text erwartet");
+check(D.findOldCodes(text).length===1,"Ein alter Code im Text erwartet");
 
-var bad=[["PT15.e30.AAAA","Präfix"],["PT16.e30","Teile"],[sample.slice(0,-4),"Byte"],[sample+"AAAA","Byte"],["PT16.e30."+sample.split(".")[2],"Header"]];
-bad.forEach(function(b){try{D.decode(b[0]);console.error("Negativfall nicht erkannt: "+b[1]);fails++;}
-  catch(e){if(e.message.indexOf(b[1])<0){console.error("Falsche Meldung für "+b[1]+": "+e.message);fails++;}}});
-var old="PT15.eyJuIjoiQSIsInAiOiJCIn0.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
-var wa="[05.10., 20:14] Ben: Entweder Oder: mein Code für dich, Anna.\n\n"+sample+"\n\nZum Aufdecken: https://example.org/auswertung.html\n"+old;
-eq(D.findCodes(wa).length,1,"Code in WhatsApp-Nachricht");eq(D.findCodes(wa)[0],sample,"Code exakt");
-eq(D.findOldCodes(wa).length,1,"alter Code erkannt");
-console.log("Negativfälle, alte Codes und WhatsApp-Text: ok");
-console.log("Beispielcode ("+sample.length+" Zeichen): "+sample);
-process.exit(fails?1:0);
+/* Projektion */
+const pr=K.projection({self:{ans:Array(28).fill(1)},other:{ans:Array(28).fill(1)}});
+check(pr.prozent===100&&pr.gesamt===28,"Projektion falsch");
+
+console.log(fehler?("Round-Trip: "+fehler+" Fehler"):"Round-Trip PT17: 3000 Datensätze, Negativfälle, WhatsApp-Text, Platzhalter er/sie: fehlerfrei.");
+console.log("Beispielcode:",good,"("+good.length+" Zeichen)");
+process.exit(fehler?1:0);
